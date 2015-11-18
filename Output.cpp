@@ -4,8 +4,6 @@
 #include "types.h"
 #include "MultiWii.h"
 
-i love alex every day
-
 void initializeSoftPWM(void);
 
 #if defined(SERVO)
