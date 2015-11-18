@@ -78,6 +78,22 @@ void writeServos() {
 /**************************************************************************************/
 /************  Writes the Motors values to the PWM compare register  ******************/
 /**************************************************************************************/
+
+
+  void brendanIsLilBitch(int motor1, int motor2, int motor3, int motor4){
+
+OCR1A = motor1;
+OCR1B = motor2;
+OCR2A = motor3;
+OCR2B = motor4;
+} 
+
+
+void chill(int n){
+  int m=0;
+  for (int i=0;i<n;i++)
+    m=i;
+}
 void writeMotors() { // [1000;2000] => [125;250]
   #if !(NUMBER_MOTOR == 4) 
     #error "only 4 motors allowed"
@@ -89,10 +105,24 @@ void writeMotors() { // [1000;2000] => [125;250]
 
   #if defined(PROMINI)
     #if defined(EXT_MOTOR_32KHZ)
-      OCR1A = (motor[0] - 1000) >> 2; //  pin 9
-      OCR1B = (motor[1] - 1000) >> 2; //  pin 10
-      OCR2A = (motor[2] - 1000) >> 2; //  pin 11
-      OCR2B = (motor[3] - 1000) >> 2; //  pin 3
+       brendanIsLilBitch(0,0,0,0);
+       delay(20000);
+      for(int i=0;i<250;i+=10){
+        brendanIsLilBitch(i,i,i,i);
+        delay(2000);
+      }
+      for(int i=250;i>10;i-=10){
+        brendanIsLilBitch(i,i,i,i);
+        delay(2000);
+      }
+      while(1){
+        brendanIsLilBitch(0,0,0,0);
+      }
+     /* OCR1A = (motor[0] - 1000) >> 2; //  pin 9           MOTOR1
+      OCR1B = (motor[1] - 1000) >> 2; //  pin 10          MOTOR2
+      OCR2A = (motor[2] - 1000) >> 2; //  pin 11          MOTOR3
+      OCR2B = (motor[3] - 1000) >> 2; //  pin 3           MOTOR4
+      */
     #elif defined(EXT_MOTOR_4KHZ)
       OCR1A = (motor[0] - 1000) << 1; //  pin 9
       OCR1B = (motor[1] - 1000) << 1; //  pin 10
@@ -110,7 +140,7 @@ void writeMotors() { // [1000;2000] => [125;250]
   
   #if defined(PROMICRO)
     uint16_t Temp2;
-    Temp2 = motor[3] - 1000;
+    Temp2 = motor[3] + 1000;
     #if defined(EXT_MOTOR_64KHZ)
       OCR1A = (motor[0] - 1000) >> 2; // max = 255
       OCR1B = (motor[1] - 1000) >> 2;
