@@ -123,14 +123,14 @@ int16_t _atan2(int32_t y, int32_t x){         //defining the atan2 function for 
   return a;
 }
 
-float InvSqrt (float x){                      //funky little algorithm for calculating inverse square roots of 32 bit numbers
-  union{  
+float InvSqrt (float x){                      //funky little algorithm for calculating inverse square roots of 32 bit numbers (see https://en.wikipedia.org/wiki/Fast_inverse_square_root), used for normalization
+  union{                                      //basically, it estimates the inverse square root by subtracting from that magic number down there, then refining with a Newton's method iteration -- used to get vector magnitudes
     int32_t i;  
     float   f; 
   } conv; 
   conv.f = x; 
-  conv.i = 0x5f3759df - (conv.i >> 1); 
-  return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);
+  conv.i = 0x5f3759df - (conv.i >> 1);        //this magic number (0x5f3759df) minus the bit pattern of x and i, shifted right one position
+  return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);    //Newton's method on that result (treated as a floating point value) gets you much closer
 }
 
 // Rotate Estimated vector(s) with small angle approximation, according to the gyro data
