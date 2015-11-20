@@ -1,0 +1,36 @@
+void setup() {
+  Serial.begin(19200);
+  #define ARRAY_SIZE 200
+}
+
+void loop()
+{
+   int motor = 0;
+   GaussArray(ARRAY_SIZE);
+   FlightArray(MyArray, n);
+}
+
+void GaussArray(int n)
+{
+  int mean = n/2;
+  int sigma = 1;
+  int MyArray[ARRAY_SIZE];
+  for(int i = 0; i < n; i++){
+    int value = 255/(sigma*sqrt(2*3.1415))*exp(-0.5*pow((i-mean)/sigma,2.));
+    MyArray[i] = value;
+    Serial.print(MyArray[i]);
+    delay(500);
+  }
+}
+
+void FlightArray(int TheArray[], int n)
+{
+   for(int i = 0; i < n; i++){
+       motor = TheArray[i];
+       OCR1A = motor;
+       OCR1B = motor;
+       OCR2A = motor;
+       OCR2B = motor;
+       delay(500)
+   }
+}
