@@ -1,3 +1,8 @@
+/*
+ * EEPROM. Non-volatile memory that houses the firmware. Describes parameters, including PID.
+ *
+ */
+
 #include <avr/eeprom.h>
 #include "Arduino.h"
 #include "config.h"
