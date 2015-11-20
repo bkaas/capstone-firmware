@@ -1,3 +1,31 @@
+/*
+ * IMU. Sets up the Inertial Measurement Unit (combined accelerometer and gyro sensors).
+ * 
+ * The basic idea is that you sense interial forces in cardinal components. By comparing
+ * the relative magnitudes in each component (and comparing with gyro readings),
+ * angular orientation in space (direction of g) and changes in motion can be calculated.
+ * 
+ * We have to include the gyro because the accelerometers measure ALL forces on the
+ * system -- including the actuation that makes the thing fly.
+ * 
+ * Gyros are good short term (they don't get messed up by external forces) but they
+ * tend to drift because they rely on integration (errors pile up). Accelerometers
+ * are good for long-term stability, even though they are prone to short-term errors.
+ * Hence, it's a good idea to low-pass accelerometer data.
+ *
+ * It uses a complementary filter, rather than a Kalman filter. It balances the long-
+ * and short-term accuracy of the two sensing systems by weighting the importance of
+ * each. It has the added benefit that results are easier to compute.
+ * 
+ * The basic filter is: angle = 0.98*(angle + gyrData*dt) + 0.02*(accelData)
+ * 
+ * You can see below, we compute the angle from accelerometer data using the atan2
+ * function. This is standard.
+ * 
+ * Check it out, here: http://www.pieter-jan.com/node/11
+ *
+ */
+
 #include "Arduino.h"
 #include "config.h"
 #include "def.h"
@@ -58,16 +86,16 @@ void computeIMU () {
 #define GYR_CMPFM_FACTOR 250
 
 //****** end of advanced users settings *************
-#define INV_GYR_CMPF_FACTOR   (1.0f / (GYR_CMPF_FACTOR  + 1.0f))
+#define INV_GYR_CMPF_FACTOR   (1.0f / (GYR_CMPF_FACTOR  + 1.0f))    //the 1.0f ensures that you're working with a literal float value (it's just a 1, though)
 #define INV_GYR_CMPFM_FACTOR  (1.0f / (GYR_CMPFM_FACTOR + 1.0f))
 
-typedef struct fp_vector {		
-  float X,Y,Z;		
-} t_fp_vector_def;
+typedef struct fp_vector {		                //basically, lets you refer to "struct fp_vector" using the variable named "t_fp_vector_def", so you don't have to keep typing "struct"
+  float X,Y,Z;		                            //defines what the structure (grouped list of variables referred to by the given tag) is made up of -- here, three floats
+} t_fp_vector_def;                            //to access a member of the structure, you use structure_tag.name_of_variable
 
-typedef union {		
-  float A[3];		
-  t_fp_vector_def V;		
+typedef union {		                            //a union is like a structure over a shared space in memory (shared by all the variables defined inside -- but only big enough to fit the largest member at one time)
+  float A[3];		                              //note: structures must contain variables of the same type, but unions are multi-purpose (only care about size in memory, like building a chest to toss stuff in)
+  t_fp_vector_def V;		                      //so here we're carving out a space the size of a 1x3 array of floats, into which we will shove the members of t_fp_vector_def
 } t_fp_vector;
 
 typedef struct int32_t_vector {
@@ -77,11 +105,11 @@ typedef struct int32_t_vector {
 typedef union {
   int32_t A[3];
   t_int32_t_vector_def V;
-} t_int32_t_vector;
+} t_int32_t_vector;                           //now we have two "chests" into which we can throw our vector components: one sized for floating point input, one for 32bit ints
 
-int16_t _atan2(int32_t y, int32_t x){
-  float z = (float)y / x;
-  int16_t a;
+int16_t _atan2(int32_t y, int32_t x){         //defining the atan2 function for x-y inputs
+  float z = (float)y / x;                     //casts the division of y/x as a float and stores in z
+  int16_t a;                                  //perform atan2 calculation for various mixes of x,y input
   if ( abs(y) < abs(x) ){
      a = 573 * z / (1.0f + 0.28f * z * z);
    if (x<0) {
@@ -95,7 +123,7 @@ int16_t _atan2(int32_t y, int32_t x){
   return a;
 }
 
-float InvSqrt (float x){ 
+float InvSqrt (float x){                      //funky little algorithm for calculating inverse square roots of 32 bit numbers
   union{  
     int32_t i;  
     float   f; 
@@ -286,4 +314,3 @@ uint8_t getEstimatedAltitude(){
   return 1;
 }
 #endif //BARO
-
