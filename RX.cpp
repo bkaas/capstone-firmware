@@ -153,6 +153,7 @@ void configureReceiver() {
     cTime = micros();         // micros() return a uint32_t, but it is not usefull to keep the whole bits => we keep only 16 bits
     sei();                    // re enable other interrupts at this point, the rest of this interrupt is not so time critical and can be interrupted safely
     PCintLast = pin;          // we memorize the current state of all PINs [D0-D7]
+    						  // ARE THESE THE PINS WE HIGHJACK?? -Brendan
   
     #if (PCINT_PIN_COUNT > 0)
       RX_PIN_CHECK(0,2);
@@ -251,7 +252,7 @@ void configureReceiver() {
 
 /**************************************************************************************/
 /***************                PPM SUM RX Pin reading             ********************/
-/**************************************************************************************/
+/**************************************************************************************/  //looks important -Brendan
 // attachInterrupt fix for promicro
 #if defined(PROMICRO) && defined(SERIAL_SUM_PPM)
   ISR(INT6_vect){rxInt();}
@@ -276,10 +277,10 @@ void configureReceiver() {
     sei();
     diff = now - last;
     last = now;
-    if(diff>3000) chan = 0;
+    if(diff>3000) chan = 0; //this is the gap at the end which indicates startover of PPM frame
     else {
       if(900<diff && diff<2200 && chan<RC_CHANS ) {   //Only if the signal is between these values it is valid, otherwise the failsafe counter should move up
-        rcValue[chan] = diff;
+        rcValue[chan] = diff; //save ppm value for that channel SUPER IMPORTANT -Brendan
         #if defined(FAILSAFE)
           if(chan<4 && diff>FAILSAFE_DETECT_TRESHOLD) GoodPulses |= (1<<chan); // if signal is valid - mark channel as OK
           if(GoodPulses==0x0F) {                                               // If first four chanells have good pulses, clear FailSafe counter
