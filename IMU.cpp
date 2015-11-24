@@ -167,7 +167,7 @@ void getEstimatedAttitude(){
   for (axis = 0; axis < 3; axis++) {
     deltaGyroAngle[axis] = imu.gyroADC[axis]  * scale; // radian
 
-    accLPF32[axis]    -= accLPF32[axis]>>ACC_LPF_FACTOR;
+    accLPF32[axis]    -= accLPF32[axis]>>ACC_LPF_FACTOR; //LPF FACTOR = 4
     accLPF32[axis]    += imu.accADC[axis];
     imu.accSmooth[axis]    = accLPF32[axis]>>ACC_LPF_FACTOR;
 

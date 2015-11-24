@@ -115,6 +115,7 @@
       /* enforce your individual sensor orientation - even overrides board specific defaults */
       //#define FORCE_ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  =  Y; imu.accADC[PITCH]  = -X; imu.accADC[YAW]  = Z;}
       //#define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] =  X; imu.gyroADC[YAW] = Z;}
+      #define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] =  X; imu.gyroADC[YAW] = Z;}
       //#define FORCE_MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  = Z;}
 
       /* Board orientation shift */
@@ -824,7 +825,7 @@
     #if defined(HK_MICRO_MWC)
       #define MIDRC 1480
     #elif defined(HK_MICRO_X)
-	  #define MIDRC 1520
+	  #define MIDRC 1350//1520
 	#else
       #define MIDRC 1500
     #endif
