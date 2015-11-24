@@ -23,6 +23,8 @@
  * function. This is standard.
  * 
  * Check it out, here: http://www.pieter-jan.com/node/11
+ * 
+ * - Dan
  *
  */
 
@@ -36,6 +38,8 @@
 
 void getEstimatedAttitude();
 
+//The IMU.gyroData[axis] is what's giving you your g-vector estimate (axis can be PITCH, YAW, ROLL, as defined in sensors.cpp and def.h). It is used below in determining the delta rotation between gyroData measurements (delta).
+//PITCH, YAW, ROLL themselves refer to variables X,Y,Z (the exact relationship is given in sensors.cpp, related to the kind of quad we're using. - Dan
 void computeIMU () {
   uint8_t axis;
 
@@ -95,7 +99,7 @@ typedef struct fp_vector {		                //basically, lets you refer to "stru
 
 typedef union {		                            //a union is like a structure over a shared space in memory (shared by all the variables defined inside -- but only big enough to fit the largest member at one time)
   float A[3];		                              //note: structures must contain variables of the same type, but unions are multi-purpose (only care about size in memory, like building a chest to toss stuff in)
-  t_fp_vector_def V;		                      //so here we're carving out a space the size of a 1x3 array of floats, into which we will shove the members of t_fp_vector_def
+  t_fp_vector_def V;		                      //so here we're carving out a space the size of a 1x3 array of floats, into which we will shove the members of t_fp_vector_def - Dan
 } t_fp_vector;
 
 typedef struct int32_t_vector {
@@ -109,7 +113,7 @@ typedef union {
 
 int16_t _atan2(int32_t y, int32_t x){         //defining the atan2 function for x-y inputs
   float z = (float)y / x;                     //casts the division of y/x as a float and stores in z
-  int16_t a;                                  //perform atan2 calculation for various mixes of x,y input
+  int16_t a;                                  //perform atan2 calculation for various mixes of x,y input - Dan
   if ( abs(y) < abs(x) ){
      a = 573 * z / (1.0f + 0.28f * z * z);
    if (x<0) {
@@ -130,18 +134,117 @@ float InvSqrt (float x){                      //funky little algorithm for calcu
   } conv; 
   conv.f = x; 
   conv.i = 0x5f3759df - (conv.i >> 1);        //this magic number (0x5f3759df) minus the bit pattern of x and i, shifted right one position
-  return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);    //Newton's method on that result (treated as a floating point value) gets you much closer
+  return 0.5f * conv.f * (3.0f - x * conv.f * conv.f);    //Newton's method on that result (treated as a floating point value) gets you much closer - Dan
 }
 
+/*
+ * Fucking pointers. See here for a more detailed explanation (http://boredzo.org/pointers/).
+ * 
+ * Remember that arrays usually work like pointers. If int array[]={1,2,3}; then writing "array" points to the first element of the array.
+ * Passing "array" to a function passes a pointer to the array's first element.
+ * Hence, array = &array == &array[0]
+ * 
+ * An example:
+ * int *array_ptr = array;  //defines the pointer "array_ptr", which points to the first element of "array"
+ * printf(*(array_ptr++));  //the * "dereferences" the pointer (giving you the value stored there, not the address), the ++ THEN increments
+ * printf(*(array_ptr++));  //incrementing a pointer by 1 adds 1*(size of type of pointer); since these are int-type, it increments by 4 bytes
+ * printf(*array_ptr);
+ * 
+ * This returns "1 2 3", each on a new line.
+ *
+ * Another example
+ * printf(array[0]); -> 1
+ * int *array_ptr = &array[1];  //the pointer is now to the SECOND element of "array"
+ * printf(array[1]); -> 3       //so, array[1] is essentially *(array_ptr + 1), and refers to the second element of "array".
+ * 
+ * Pointers can also point to members of structures using the pointer-to-member operator "->"
+ * Ex. foo_ptr -> size = new_size; //updates the "size" member of the "foo" structure with "new_size" value
+ * This is equivalent to (*foo_ptr).size = new_size;
+ * 
+ * Notice, the "&" operator adds an asterisk, while *,->,[] operators remove them. Can think of this as increasing/decreasing the pointer level.
+ * So if you have a system {int a = 3; int *b = &a; int **c = &b; int ***d = &c;} then the following are true:
+ * *d == c; //dereferenceing int *** once gives int ** (3 - 1 = 2)
+ * **d == *c == b; //dereferencing int *** twice gives int * (3 - 2 = 1)
+ * ***d == **c == *b == a == 3; etc.
+ * 
+ * You can also take the address of a function. Similar to arrays, functions decay to pointers when their names are used.
+ * When calling a function, you use an operator called the "function call operator" (it takes a function pointer on its left side).
+ * 
+ * Ex. Here, dst, src are arguments, and strcpy is the function (function pointer) to be called.
+ * enum {str_length = 18U}; //enumerating lets you treat elements of a set as symbolic (like how FALSE and TRUE can be treated as 0, 1 for boolean logic), U just means unsigned
+ * char src[str_length] = "This is a string.", dst[str_length]; //defines a source of char type, destination of same
+ * strcpy(dst,src); //function call operator, strcpy is the function pointer
+ * 
+ * char *strcpy(char *dst, const char *src); //function declaration (for reference)
+ * char *(*strcpy_ptr)(char *dst, const char *src); //pointer to a function like strcpy
+ * strcpy_ptr = strcpy;
+ * strcpy_ptr = &strcpy; //this would also work, recall
+ * char *(*strcpy_ptr_noparams)(char *, const char *) = strcpy_ptr; //parameter names are optional, but need types to be the same
+ * 
+ * Notice, if you wanted to cast something like this pointer, you'd need:
+ * strcpy_ptr = (char *(*)(char *dst, const char *src))my_strcpy;
+ * 
+ * And, so, a pointer to "a pointer to a function" has two asterices inside the parentheses:
+ * char *(**strcpy_ptr_ptr)(char *, const char *) = &strcpy_ptr;
+ * 
+ * You can even have an array of function pointers:
+ * char *(*strcpies[3])(char *, const char *) = {strcpy,strcpy,strcpy};
+ * strcpies[0](dst,src);
+ * 
+ * Ex. The following declaration declares a function f with no parameters, and:
+ * f returns an int;
+ * f returns a function fip with no parameter specification returning a pointer to an int;
+ * f returns a pointer pfi to a function with no parameter specification returning an int.
+ * 
+ * int f(void), *fip(), (*pfi)();
+ * 
+ * It is equivalent to:
+ * 
+ * int f(void);
+ * int *fip(); //function returning an int pointer
+ * int (*pfi)(); //pointer to function returning int
+ * 
+ * A function pointer can even be the return value of a function.
+ * 
+ * SUMMARY
+ * (1) You can declare a pointer variable: char *ptr; OR char (*ptr) //pointer type char, level *, variable name ptr
+ * (2) You can replace the varable name with a name followed by parameters: char *strcpy(char *dst, const char *src); //a function declaration
+ * 
+ * Oberserve in (2) that the first * is part of the return type, so we need to add a pointer-level back to get a function pointer variable (below):
+ * 
+ * (3) char *(*strcpy_ptr)(char *dst, const char *src); //a (this time a function pointer-) variable, again!
+ * 
+ * And. Analogously, we can go from this VARIABLE, to a FUNCTION that returns a function pointer, by replacing the variable name with a name followed by parameters:
+ * 
+ * (4) char *(*get_strcpy_ptr(void))(char *dst, const char *src);
+ * 
+ * The type of a pointer to a function (taking no arguments and returning int) is int (*)(void), so the type returned by the function in (4) is char *(*)(char *, const char *).
+ * Here, the inner * indicates a pointer, the outer * is part of the return type of the pointed-to function. This is also the type of strcpy_ptr, above.
+ * 
+ * So, the function in (4), called with no parameters, returns a pointer to a strcpy-like function:
+ * strcpy_ptr = get_strcpy_ptr();
+ * 
+ * You could alternatively write:
+ * typedef char *(*strcpy_funcptr)(char *, const char *);
+ * strcpy_funcptr strcpy_ptr = strcpy;
+ * strcpy_funcptr get_strcpy_ptr(void);
+ * 
+ * - Dan
+ *
+ */
+
 // Rotate Estimated vector(s) with small angle approximation, according to the gyro data
-void rotateV(struct fp_vector *v,float* delta) {
-  fp_vector v_tmp = *v;
-  v->Z -= delta[ROLL]  * v_tmp.X + delta[PITCH] * v_tmp.Y;
-  v->X += delta[ROLL]  * v_tmp.Z - delta[YAW]   * v_tmp.Y;
+void rotateV(struct fp_vector *v,float* delta) {                       //the function rotateV takes a pair of parameters, one is a pointer associated with the fp_vector structure contents, the other is a pointer to a float called "delta"
+  fp_vector v_tmp = *v;                                                //so, the pointer *v lets you access the members of the structure fp_vector, hereafter referred to as v_tmp
+  v->Z -= delta[ROLL]  * v_tmp.X + delta[PITCH] * v_tmp.Y;             //accessing the Z component of v_tmp (that is, fp_vector) and assigning (Z - delta[ROLL] * v_tmp.X + delta[PITCH] * v_tmp.Y) to it;
+  v->X += delta[ROLL]  * v_tmp.Z - delta[YAW]   * v_tmp.Y;             //delta[ROLL] calculates the difference between the current gyroADC reading, and the current one wrt to [ROLL] axis, for example - Dan
   v->Y += delta[PITCH] * v_tmp.Z + delta[YAW]   * v_tmp.X;
 }
 
-
+// It looks like it's looking for a magnetometer, to figure out which way North is. Otherwise, it's shoving a random estimate for the t_fp_vector.
+// See here for info on direction cosine matrices to get the orientation between earth's field and the quads' (notice, there are multiple fields for the quad, associated with each axis): http://gentlenav.googlecode.com/files/DCMDraft2.pdf
+//Because all these variables are static type, they keep their value between iterations of whatever loops they're called in.
+//This means (a) their definition doesn't spill out into other files, and (b) they don't have their location in memory constantly being overwritten. - Dan
 static int32_t accLPF32[3]    = {0, 0, 1};
 static float invG; // 1/|G|
 
@@ -155,6 +258,9 @@ static t_int32_t_vector EstG32;
   static t_int32_t_vector EstN32;
 #endif
 
+// Get estimated attitude works in a couple steps:
+// (1) It runs the rotation function "rotateV" for the magnetometer's two readings (gyro itself, and earth (real or estimated)) for comparison to figure out the orientation wrt each other.
+// (2) It does the atan2 calculation on the results of this, to get the orientation and heading. - Dan
 void getEstimatedAttitude(){
   uint8_t axis;
   int32_t accMag = 0;
@@ -163,6 +269,10 @@ void getEstimatedAttitude(){
 
   scale = SCALECORR * GYRO_SCALE; // GYRO_SCALE unit: radian/microsecond
 
+
+  // Below, they're running a little low-pass filter (by bit-shifting the accLPF32[axis] input by "the filter factor number of bits") to get a smoothed out accelerometer reading.
+  // See here for info on rotation matrices (http://www.multiwii.com/forum/viewtopic.php?f=8&t=849&start=90) - Dan
+  
   // Initialization
   for (axis = 0; axis < 3; axis++) {
     deltaGyroAngle[axis] = imu.gyroADC[axis]  * scale; // radian
