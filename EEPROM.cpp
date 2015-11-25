@@ -132,6 +132,11 @@ void update_constants() {
   writeParams(0); // this will also (p)reset checkNewConf with the current version number again.
 }
 
+/*
+ * Here they're loading up the defaul PID values. From the previous quadcopter project, we have optimum values of xKp = 40, xKi = 3, xKd = 20, zKp = 5, zKi = 5, zKd = 0.
+ * As you can see below, they've got a ton of defaults under the #else branch of the if statement.
+ * 
+ */
 void LoadDefaults() {
   uint8_t i;
   #ifdef SUPPRESS_DEFAULTS_FROM_GUI
