@@ -99,7 +99,7 @@ uint16_t read16() {
 uint32_t read32() {
   uint32_t t = read16();
   t+= (uint32_t)read16()<<16;
-  return t;
+  return t; 
 }
 
 void serialize8(uint8_t a) {
@@ -282,12 +282,13 @@ void evaluateCommand() {
        uint32_t g;
        uint16_t h;
        uint8_t  i,j,k,l;
+       uint16_t m;
      } set_misc;
-     s_struct_w((uint8_t*)&set_misc,22);
+     s_struct_w((uint8_t*)&set_misc,24); //changed from 22 - Alex
      #if defined(POWERMETER)
        conf.powerTrigger1 = set_misc.a / PLEVELSCALE;
      #endif
-     conf.minthrottle = set_misc.b;
+     conf.minthrottle = set_misc.b; 
      #ifdef FAILSAFE 
        conf.failsafe_throttle = set_misc.e;
      #endif  
@@ -300,6 +301,7 @@ void evaluateCommand() {
        conf.vbatlevel_warn2  = set_misc.k;
        conf.vbatlevel_crit   = set_misc.l;
      #endif
+     conf.throttleIn = set_misc.m; //alex
      break;
    case MSP_MISC:
      struct {
@@ -307,6 +309,7 @@ void evaluateCommand() {
        uint32_t g;
        uint16_t h;
        uint8_t  i,j,k,l;
+       uint16_t m; //alex
      } misc;
      misc.a = intPowerTrigger1;
      misc.b = conf.minthrottle;
@@ -336,7 +339,9 @@ void evaluateCommand() {
      #else
        misc.i = 0;misc.j = 0;misc.k = 0;misc.l = 0;
      #endif
-     s_struct((uint8_t*)&misc,22);
+     misc.m= conf.throttleIn;
+     s_struct((uint8_t*)&misc,24); //alex. changed from 22
+
      break;
    #endif
    #if defined (DYNBALANCE)
@@ -573,7 +578,7 @@ void evaluateCommand() {
      break;
    case MSP_ACC_CALIBRATION:
      if(!f.ARMED) calibratingA=512;
-     headSerialReply(0);
+     headSerialReply(0); //i am here
      break;
    case MSP_MAG_CALIBRATION:
      if(!f.ARMED) f.CALIBRATE_MAG = 1;

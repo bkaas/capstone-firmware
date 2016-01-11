@@ -1,9 +1,4 @@
-/*
- * EEPROM. Non-volatile memory that houses the firmware. Describes parameters, including PID.
- *
- */
-
-#ifndef EEPROM_H_                    //Checks to see if EEPROM_H_ has been #defined earlier in this file, or in an included file. If not, it includes the code below.
+#ifndef EEPROM_H_
 #define EEPROM_H_
 
 void readGlobalSet();

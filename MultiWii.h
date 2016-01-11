@@ -2,7 +2,6 @@
 #define MULTIWII_H_
 
 #define  VERSION  232
-//#define FAILSAFE
 
 #include "types.h"
 

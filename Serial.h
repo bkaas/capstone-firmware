@@ -6,7 +6,7 @@
 #elif defined(PROMICRO)
   #define UART_NUMBER 2
 #else
-  #define UART_NUMBER 1
+  #define UART_NUMBER 1 //this is us - Alex
 #endif
 #if defined(GPS_SERIAL)
   #define RX_BUFFER_SIZE 256 // 256 RX buffer is needed for GPS communication (64 or 128 was too short)

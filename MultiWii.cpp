@@ -797,9 +797,9 @@ void loop () {
     computeRC();
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
-      if ( failsafeCnt > (5*FAILSAFE_DELAY) && f.ARMED) {                  // Stabilize, and set Throttle to specified level. FAILSAFE_DELAY = 1, f.ARMED = 1 when on.
-        for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec). MIDRC = 1520.
-        rcData[THROTTLE] = conf.failsafe_throttle;                          // conf.failsafe_throttle = 1100
+      if ( failsafeCnt > (5*FAILSAFE_DELAY) && f.ARMED) {                  // Stabilize, and set Throttle to specified level
+        for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
+        rcData[THROTTLE] = conf.failsafe_throttle;
         if (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
           go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
           f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
@@ -819,8 +819,8 @@ void loop () {
     uint8_t stTmp = 0;
     for(i=0;i<4;i++) {
       stTmp >>= 2;
-      if(rcData[i] > MINCHECK) stTmp |= 0x80;      // check for MIN. MINCHECK = 1100
-      if(rcData[i] < MAXCHECK) stTmp |= 0x40;      // check for MAX. MAXCHECK = 1800
+      if(rcData[i] > MINCHECK) stTmp |= 0x80;      // check for MIN
+      if(rcData[i] < MAXCHECK) stTmp |= 0x40;      // check for MAX
     }
     if(stTmp == rcSticks) {
       if(rcDelayCommand<250) rcDelayCommand++;
@@ -1223,8 +1223,8 @@ void loop () {
     #if defined(ACROTRAINER_MODE)
       if(f.ANGLE_MODE){
         if (abs(rcCommand[ROLL]) + abs(rcCommand[PITCH]) >= ACROTRAINER_MODE ) {
-          f.ANGLE_MODE=0;
-          f.HORIZON_MODE=0;
+          f.ANGLE_MODE=1; //changed to 1 by Alex
+          f.HORIZON_MODE=0; //changed to 1 by Alex
           f.MAG_MODE=0;
           f.BARO_MODE=0;
           f.GPS_HOME_MODE=0;
@@ -1442,5 +1442,8 @@ void loop () {
     // do not update servos during unarmed calibration of sensors which are sensitive to vibration
     if ( (f.ARMED) || ((!calibratingG) && (!calibratingA)) ) writeServos();
     writeMotors();
+    /*if(!f.ARMED){
+      f.ARMED = 1; //Alex (ok... Daniel)
+    }*/
   }
 }

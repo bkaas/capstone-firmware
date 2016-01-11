@@ -167,41 +167,37 @@ struct servo_conf_ {  // this is a generic way to configure a servo, every multi
   int8_t  rate;       // range [-100;+100] ; can be used to ajust a rate 0-100% and a direction
 };
 
-/*
- * HOLY SHIT I FOUND IT.
- * This is the configuration structure that houses all the variables we need to work with. Everything that we can change to keep it flying. - Dan
- */
 typedef struct {
-  pid_    pid[PIDITEMS]; //PIDITEMS is just the index of the last element of the "pid" enum (so, basically, it's the size of that structure, in the unit of "elements" (elements are (PID in front of each, omitted for space) PIDROLL, PIDPITCH, ...YAW, ALT, POS, POSR, NAVR, LEVEL, MAG, VEL, ITEMS). Means you can access that element using the name rather than the element number.
-  pid_    pidset[NUMPIDSETS][PIDSETITEMS]; //NUMPIDSETS is defined as 2, so I guess there are two PID sets, and PIDSETITEMS is, similarly, the index of the last element in the "pid_set" enum
-  uint8_t rcRate8; //defined and used in tuning in EEPROM.cpp (based on its value, returns a particular location for use in a lookup table) to get dynamic ROLL&PITCH PID adjustments based on RC throttle position.
-  uint8_t rcExpo8; //another value defined and used in tuning in EEPROM.cpp (contributes to the lookup table location). Lookup table is implemented in MultiWii.cpp.
-  uint8_t rollPitchRate; //defined in EEPROM.cpp, and used in MultiWii.cpp -- basically, it's like a HUGE rcExpo8 adjustment, designed to lessen the correction control and increase the rotation rate when the RC stick is far from centre (to make flips easier)
-  uint8_t yawRate; //defined in EEPROM.cpp, used in MultiWii.cpp in the YAW PID, since it defines the rate at which the thing can turn through the vertical axis -- use it do get the error term
-  uint8_t dynThrPID; //defined in EEPROM.cpp, used in MultiWii.cpp in the dynamic ROLL/PITCH PID, where it makes adjustments dynamically based on the throttle value
-  uint8_t thrMid8; //defined and used in EEPROM.cpp -- along with rcRate8, rcExpo8 -- gives the location in the lookup table for mid throttle/expo values when applying "rcCommand"s
-  uint8_t thrExpo8; //defined in EEPROM.cpp and used in MultiWii.cpp -- along with rcRate8, rcExpo8, and thrMid8 -- giving the location in the lookup table when appling "rcCommand"s
-  int16_t angleTrim[2]; //tiny array defined in both EEPROM.cpp and Sensors.cpp and used to distinguish between roll and pitch when calculating angular error in MultiWii.cpp and Sensors.cpp; looks at stick locations to set values for angleTrim[PITCH/ROLL], then compares to saved values from previous iteration. 
-  uint16_t activate[CHECKBOXITEMS]; //CHECKBOXITEMS is the index of the last element of the "box" enum, which houses a checklist of flight mode settings ("headfree", "accro", etc.)
-  uint8_t powerTrigger1; //for use in alarm system (I guess for when the power level gets too low?)
+  pid_    pid[PIDITEMS];
+  pid_    pidset[NUMPIDSETS][PIDSETITEMS];
+  uint8_t rcRate8;
+  uint8_t rcExpo8;
+  uint8_t rollPitchRate;
+  uint8_t yawRate;
+  uint8_t dynThrPID;
+  uint8_t thrMid8;
+  uint8_t thrExpo8;
+  int16_t angleTrim[2];
+  uint16_t activate[CHECKBOXITEMS];
+  uint8_t powerTrigger1;
   #if MAG
-    int16_t mag_declination; //sets the declination, for use in magnetometer atan2 stuff to determine heading -- may need to be set for your location
+    int16_t mag_declination;
   #endif
-  servo_conf_ servoConf[8]; //see immediately above in types.h; generic way to configure a servo (defining min (2), max (2), middle (2), and rate(1)) for 8 servos
-  #if defined(GYRO_SMOOTHING) //setting for separating and averaging gyro PITCH, YAW, ROLL -- not appropriate for multicopters, so don't fuck with this
+  servo_conf_ servoConf[8];
+  #if defined(GYRO_SMOOTHING)
     uint8_t Smoothing[3];
   #endif
-  #if defined (FAILSAFE) //for landing when something goes wrong (see line 802 of MultiWii.cpp), set the rcData to the failsafe_throttle value and lands
+  #if defined (FAILSAFE)
     int16_t failsafe_throttle;
   #endif
-  #ifdef VBAT //bunch of stuff for battery related measurements and warnings
+  #ifdef VBAT
     uint8_t vbatscale;
     uint8_t vbatlevel_warn1;
     uint8_t vbatlevel_warn2;
     uint8_t vbatlevel_crit;
   #endif
   #ifdef POWERMETER
-    uint8_t pint2ma; //for calculating power, gets the scales amps
+    uint8_t pint2ma;
   #endif
   #ifdef POWERMETER_HARD
     uint16_t psensornull;
@@ -212,7 +208,8 @@ typedef struct {
   #ifdef ARMEDTIMEWARNING
     uint16_t armedtimewarning;
   #endif
-  int16_t minthrottle;    // for setting the minthrottle value
+  int16_t minthrottle;
+  int16_t throttleIn; // Throttle slider from MultiWii, added by Alex
   uint8_t  checksum;      // MUST BE ON LAST POSITION OF CONF STRUCTURE !
 } conf_t;
 

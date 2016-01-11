@@ -309,11 +309,13 @@ void GYRO_Common() {
       // Reset g[axis] at start of calibration
       if (calibratingG == 512) {
         g[axis]=0;
-        gyroZero[axis]=0;       
+        gyroZero[axis]=0;
+        calibratingA=512; // automatically calibrates! Changed by Alex
+       
         #if defined(GYROCALIBRATIONFAILSAFE)
             previousGyroADC[axis] = imu.gyroADC[axis];
           }
-          if (calibratingG % 10 == 0) {
+          if (calibratingG % 10 == 0) {//originally 10  changed by Alex
             if(abs(imu.gyroADC[axis] - previousGyroADC[axis]) > 32) tilt=1;
             previousGyroADC[axis] = imu.gyroADC[axis];
        #endif

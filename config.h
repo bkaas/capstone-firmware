@@ -45,7 +45,7 @@
   /****************************    Motor minthrottle    *******************************/
     /* Set the minimum throttle command sent to the ESC (Electronic Speed Controller)
        This is the minimum value that allow motors to run at a idle speed  */
-    #define MINTHROTTLE 1050 // (*) (**)
+    #define MINTHROTTLE 1000 // (*) (**)
 
   /****************************    Motor maxthrottle    *******************************/
     /* this is the maximum value for the ESCs at full power, this value can be increased up to 2000 */
@@ -115,7 +115,6 @@
       /* enforce your individual sensor orientation - even overrides board specific defaults */
       //#define FORCE_ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  =  Y; imu.accADC[PITCH]  = -X; imu.accADC[YAW]  = Z;}
       //#define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] =  X; imu.gyroADC[YAW] = Z;}
-      #define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] =  X; imu.gyroADC[YAW] = Z;}
       //#define FORCE_MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  = Z;}
 
       /* Board orientation shift */
@@ -126,8 +125,8 @@
       //#define SENSORS_TILT_45DEG_LEFT         // rotate the FRONT 45 degres counterclockwise
 
 	// magless HF & HH
-	#define HEADFREE
-	#define HEADHOLD
+	#define HEADFREE //Turned off by Alex. Turned back on
+	#define HEADHOLD //Turned off by Alex. Turned back on
 /*************************************************************************************************/
 /*****************                                                                 ***************/
 /****************  SECTION  2 - COPTER TYPE SPECIFIC OPTIONS                               *******/
@@ -825,9 +824,12 @@
     #if defined(HK_MICRO_MWC)
       #define MIDRC 1480
     #elif defined(HK_MICRO_X)
-	  #define MIDRC 1350//1520
+	  #define MIDRC 1520
 	#else
       #define MIDRC 1500
+      
+      
+      
     #endif
 
   /***********************         Servo Refreshrates            ***********************/
