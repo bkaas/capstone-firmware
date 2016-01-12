@@ -9,6 +9,7 @@ November  2013     V2.3
 */
 
 #include <avr/io.h>
+#include "Wire.h"
 
 #include "Arduino.h"
 #include "config.h"
@@ -164,6 +165,8 @@ int32_t  AltHold; // in cm
 int16_t  sonarAlt;
 int16_t  BaroPID = 0;
 int16_t  errorAltitudeI = 0;
+
+int reader[4]; //added by Dan
 
 // **************
 // gyro+acc IMU
@@ -500,7 +503,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     #if defined(GPS_PROMINI)
       if(GPS_Enable == 0) {serialCom();}
     #else
-      serialCom();
+      //serialCom();
     #endif
   #endif
 
@@ -570,15 +573,19 @@ static uint32_t PIDTime = 0;
 
 void setup() {
   #if !defined(GPS_PROMINI)
-    SerialOpen(0,SERIAL0_COM_SPEED);
-    #if defined(PROMICRO)
-      SerialOpen(1,SERIAL1_COM_SPEED);
-    #endif
-    #if defined(MEGA)
-      SerialOpen(1,SERIAL1_COM_SPEED);
-      SerialOpen(2,SERIAL2_COM_SPEED);
-      SerialOpen(3,SERIAL3_COM_SPEED);
-    #endif
+    // Added by Dan, to replace Serial.cpp and Protocol.cpp
+    Serial.begin(9600);
+
+// Commented out by Dan
+//    SerialOpen(0,SERIAL0_COM_SPEED);
+//    #if defined(PROMICRO)
+//      SerialOpen(1,SERIAL1_COM_SPEED);
+//    #endif
+//    #if defined(MEGA)
+//      SerialOpen(1,SERIAL1_COM_SPEED);
+//      SerialOpen(2,SERIAL2_COM_SPEED);
+//      SerialOpen(3,SERIAL3_COM_SPEED);
+//    #endif
   #endif
   LEDPIN_PINMODE;
   POWERPIN_PINMODE;
@@ -704,7 +711,7 @@ void setup() {
   currentTime = micros();
   RCTime = currentTime;
   PIDTime = currentTime;
-  debugmsg_append_str("initialization completed\n");
+  //debugmsg_append_str("initialization completed\n");
 }
 
 void go_arm() {
@@ -785,6 +792,20 @@ void loop () {
   static uint32_t timestamp_fixated = 0;
   int16_t rc;
   int32_t prop = 0;
+
+// This should be Wire stuff, you fucks. - Dan
+  while(Serial.available()) {
+    for(int i=0;i<4;i++) {
+      reader[i] = Serial.readString().toInt();
+      delay(2);
+    }
+  }
+
+  if(reader[0]==1){
+    conf.throttleIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
+  }
+
+  for(int i=0;i<4;i++) reader[i]=0;
 
   #if defined(SPEKTRUM)
     if (spekFrameFlags == 0x01) readSpektrum();

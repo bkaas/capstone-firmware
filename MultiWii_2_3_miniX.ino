@@ -1,30 +1,3 @@
-void setup() {
-  pinMode(13, OUTPUT);
-  Serial.begin(9600);
-}
-
-
-void loop() {
-  if (Serial.available()){
-      for (i = 0); i < 10; i++) {
-      reader[i] = Serial.read();
-      delay(2);
-    }
-  }
-    if(reader[0]=='2'&&reader[1]=='O'&&reader[2]=='N'){
-    digitalWrite(13,HIGH);
-    delay(500);
-    Serial.print("AON");
-  }
-  if(reader[0]=='2'&&reader[1]=='O'&&reader[2]=='F'&&reader[3]=='F'){
-    digitalWrite(13, LOW);
-    delay(500);
-    Serial.print("AOFF");
-  }
-
-  for(i=0; i<10;i++)
-    reader[i]=0;
-}
 /*
    Welcome to MultiWii.
 
