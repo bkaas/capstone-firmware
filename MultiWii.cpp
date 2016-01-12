@@ -26,6 +26,10 @@ November  2013     V2.3
 
 #include <avr/pgmspace.h>
 
+int reader[4]; //added by Dan
+String tmpstr;  //kaas
+int tmpint;  //kaas
+
 /*********** RC alias *****************/
 
 const char pidnames[] PROGMEM =
@@ -165,8 +169,6 @@ int32_t  AltHold; // in cm
 int16_t  sonarAlt;
 int16_t  BaroPID = 0;
 int16_t  errorAltitudeI = 0;
-
-int reader[4]; //added by Dan
 
 // **************
 // gyro+acc IMU
@@ -796,7 +798,9 @@ void loop () {
 // This should be Wire stuff, you fucks. - Dan
   while(Serial.available()) {
     for(int i=0;i<4;i++) {
-      reader[i] = Serial.readString().toInt();
+      tmpint = Serial.read();
+      tmpstr = (char)tmpint;
+      reader[i] = tmpstr.toInt();
       delay(2);
     }
   }
