@@ -10,7 +10,7 @@
 #define LEDPIN 13
 
 // compare value adjusted for CTC mode, 1/38000 sec = 420
-#define timer_ticks 420
+#define timer_ticks 210 //420
 
 const byte numPins = 8;
 byte digitalPins[] = {2,3,4,5,6,7,8,9};
@@ -72,8 +72,8 @@ TIMSK1 |= (1 << OCIE1A);
 // flip LED pin HIGH/LOW
 ISR(TIMER1_COMPA_vect)
 {
-digitalWrite(LEDPIN, !digitalRead(LEDPIN));
-digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+digitalWrite(LEDPIN, 1);
+digitalWrite(LEDPIN, 0);
 }
 
 // main loop
