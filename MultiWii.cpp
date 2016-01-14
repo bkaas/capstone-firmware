@@ -27,6 +27,8 @@ November  2013     V2.3
 #include <avr/pgmspace.h>
 
 int reader[4]; //added by Dan
+int readIn; //added by Dan
+String inString = ""; //added by Dan
 String tmpstr;  //kaas
 int tmpint;  //kaas
 
@@ -797,16 +799,30 @@ void loop () {
 
 // This should be Wire stuff, you fucks. - Dan
   while(Serial.available()) {
+    //int inChar = Serial.read();
     for(int i=0;i<4;i++) {
-      tmpint = Serial.read();
+//      reader[i] = Serial.read(); //added by Dan, in place of all the casting
+      tmpint = Serial.read(); //use this with Kaas' computer, if we have to
       tmpstr = (char)tmpint;
       reader[i] = tmpstr.toInt();
+//      inString += (char)inChar;
+//      readIn = inString.toInt();
       delay(2);
     }
   }
 
+  if(reader[0]==9){
+  //if(readIn==9000){  
+    if (!f.ARMED) f.ARMED = 1;
+    else if (f.ARMED) f.ARMED = 0;
+    //inString = "";
+  }
+
   if(reader[0]==1){
+  //if(readIn > 1000 && readIn < 2001) {
     conf.throttleIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
+    //conf.throttleIn = readIn;
+    //inString = "";
   }
 
   for(int i=0;i<4;i++) reader[i]=0;
@@ -820,13 +836,14 @@ void loop () {
   if (currentTime > RCTime ) { // 50Hz
     RCTime += CHECK_RCTIME;
     computeRC();
+    // Commented out by Dan, to allow arming by software
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
       if ( failsafeCnt > (5*FAILSAFE_DELAY) && f.ARMED) {                  // Stabilize, and set Throttle to specified level
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = conf.failsafe_throttle;
         if (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
-          go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
+          go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents - Commented out by Dan
           f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
         }
         failsafeEvents++;
@@ -867,10 +884,10 @@ void loop () {
     if(rcDelayCommand == 20) {
       if(f.ARMED) {                   // actions during armed
         #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
-          if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) go_disarm();    // Disarm via YAW
+          //if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) go_disarm();    // Disarm via YAW
         #endif
         #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
-          if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO) go_disarm();    // Disarm via ROLL
+          //if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO) go_disarm();    // Disarm via ROLL
         #endif
       } else {                        // actions during not armed
         i=0;
