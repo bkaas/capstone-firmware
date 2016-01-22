@@ -24,7 +24,7 @@ byte digitalPin = 5;
 
 SoftwareSerial quadSerial(10, 11); // RX, TX
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
-SoftwareSerial blue(8, 9); //RX, TX
+SoftwareSerial blue(8,7); //RX, TX
 
 void setup() {
   pinMode(3, OUTPUT);
@@ -58,7 +58,7 @@ void loop()  {
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening()) {
     int dist = doRange(srfAddress2);
-    if (dist < setpoint &&  c < 1951) {
+    if (dist < setpoint &&  c < 1949) {
       c = c + jump;
         quadSerial.print(c); //swap with below for troubleshooting
   //    Serial.print(c);
@@ -81,20 +81,22 @@ void loop()  {
 //    digitalWrite(3, !digitalRead(3));
       d = 9000;
       quadSerial.print(d);
-    delay(20); //if we delay above, do we need delay here?
+      delay(20); //if we delay above, do we need delay here?
       d = 0;
+      c = 0;
     }
   }
 
-  if (digitalRead(digitalPin)==LOW){
-    e = 2200;
+  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
+    e = 2200; //set the roll to escape away from whatever it senses
     quadSerial.print(e);
-    e = 2800;
+    e = 2800; //counteract that roll to get back to stationary
     quadSerial.print(e);
-    e = 2500;
+    e = 2500; //hold stationary (MIDRC)
+    quadSerial.print(e);
   }
   else {
-    e = 2500;
+    e = 2500; //if it doesn't sense something, hold stationary
     quadSerial.print(e);
   }
 }

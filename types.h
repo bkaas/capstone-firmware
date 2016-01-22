@@ -209,7 +209,9 @@ typedef struct {
     uint16_t armedtimewarning;
   #endif
   int16_t minthrottle;
-  int16_t throttleIn; // Throttle slider from MultiWii, added by Alex
+  int16_t throttleIn; // Throttle input from sensing circuit, added by Dan
+  int16_t rollIn; // Roll input from sensing circuit, added by Dan
+  int16_t pitchIn; // Pitch input from sensing circuit, added by Dan
   uint8_t  checksum;      // MUST BE ON LAST POSITION OF CONF STRUCTURE !
 } conf_t;
 
