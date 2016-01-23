@@ -10,10 +10,10 @@
 #define txrxPin 2
 #define srfAddress2 0x02
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
-#define jump 50
-#define setpoint 30
+#define jump 60
+#define setpoint 50
 
-int c = 1000;
+int c = 999;
 int d = 0;
 int e = 2500;
 char blueval;
@@ -22,15 +22,15 @@ char blueval;
 const byte numPins = 1;
 byte digitalPin = 5;
 
-SoftwareSerial quadSerial(10, 11); // RX, TX
+//SoftwareSerial quadSerial(10, 11); // RX, TX
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8,7); //RX, TX
 
 void setup() {
   pinMode(3, OUTPUT);
   Serial.begin(9600);
-  while (!Serial);
-  quadSerial.begin(9600);
+//  while (!Serial);
+//  quadSerial.begin(9600);
   while(!Serial && !blue.available());
   UltrasonicBus.begin(9600);
   while(!Serial && !UltrasonicBus.available());
@@ -58,15 +58,17 @@ void loop()  {
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening()) {
     int dist = doRange(srfAddress2);
-    if (dist < setpoint &&  c < 1949) {
+    if (dist < setpoint) {
       c = c + jump;
-        quadSerial.print(c); //swap with below for troubleshooting
+      if (c > 2000) c = 1999;
+        Serial.print(c); //swap with below for troubleshooting
   //    Serial.print(c);
       delay(20);
     }
-    else if (dist > setpoint && c > 1000) {
+    else if (dist > setpoint) {
       c = c - jump;
-      quadSerial.print(c); //ditto
+      if (c < 1000) c = 1000;
+      Serial.print(c); //ditto
   //    Serial.print(c);
       delay(20);
     }
@@ -80,25 +82,25 @@ void loop()  {
 //    Serial.print(blueval); //swap these two with below for troubleshooting
 //    digitalWrite(3, !digitalRead(3));
       d = 9000;
-      quadSerial.print(d);
+      Serial.print(d);
       delay(20); //if we delay above, do we need delay here?
       d = 0;
       c = 0;
     }
   }
 
-  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
-    e = 2200; //set the roll to escape away from whatever it senses
-    quadSerial.print(e);
-    e = 2800; //counteract that roll to get back to stationary
-    quadSerial.print(e);
-    e = 2500; //hold stationary (MIDRC)
-    quadSerial.print(e);
-  }
-  else {
-    e = 2500; //if it doesn't sense something, hold stationary
-    quadSerial.print(e);
-  }
+//  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
+//    e = 2200; //set the roll to escape away from whatever it senses
+//    Serial.print(e);
+//    e = 2800; //counteract that roll to get back to stationary
+//    Serial.print(e);
+//    e = 2500; //hold stationary (MIDRC)
+//    Serial.print(e);
+//  }
+//  else {
+//    e = 2500; //if it doesn't sense something, hold stationary
+//    Serial.print(e);
+//  }
 }
 
 int doRange(byte Address) {

@@ -825,15 +825,15 @@ void loop () {
     //inString = "";
   }
 
-  if(reader[0]==2){
-    reader[0]=reader[0]-1;
-    conf.rollIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
-  }
-
-  if(reader[0]==3){
-    reader[0]=reader[0]-2;
-    conf.pitchIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
-  }
+//  if(reader[0]==2){
+//    reader[0]=reader[0]-1;
+//    conf.rollIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
+//  }
+//
+//  if(reader[0]==3){
+//    reader[0]=reader[0]-2;
+//    conf.pitchIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
+//  }
 
   for(int i=0;i<4;i++) reader[i]=0;
 
