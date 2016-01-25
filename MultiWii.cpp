@@ -36,7 +36,7 @@ int tmpint;  //kaas
 
 /***Ultrasonic variables***/
 #define txrxPin 12                                           // Defines Pin 12 to be used as both rx and tx for the SRF01
-#define srfAddress1 0x03
+#define srfAddress1 0x01
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm
 #define getStatus 0x5F
 #define jump 50
@@ -856,16 +856,17 @@ void loop () {
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening()) {
     int dist = doRange(srfAddress1);
-    if (dist < setpoint &&  c < 1951) {
-      c = c + jump;
+      c += 20*(setpoint - dist);
+      if ( c > 1999 ) c = 1999;
+      if (c < 1001 ) c = 1001;
 //      Serial.print(c);
       delay(20);
-    }
-    else if (dist > setpoint && c > 1000) {
-      c = c - jump;
-//      Serial.print(c);
-      delay(20);
-    }
+      
+//    else if (dist > setpoint && c > 1000) {
+//      c -= 1.5*abs(setpoint - dist);
+////      Serial.print(c);m
+//      delay(20);
+//    }
   }
 
   conf.throttleIn = c;
