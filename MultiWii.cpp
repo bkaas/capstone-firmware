@@ -8,6 +8,8 @@ November  2013     V2.3
  any later version. see <http://www.gnu.org/licenses/>
 */
 
+#include <SoftwareSerial.h>
+
 #include <avr/io.h>
 #include "Wire.h"
 
@@ -31,6 +33,19 @@ int readIn; //added by Dan
 String inString = ""; //added by Dan
 String tmpstr;  //kaas
 int tmpint;  //kaas
+
+/***Ultrasonic variables***/
+#define txrxPin 12                                           // Defines Pin 12 to be used as both rx and tx for the SRF01
+#define srfAddress1 0x03
+#define getRange 0x54                                        // Byte used to get range from SRF01 in cm
+#define getStatus 0x5F
+#define jump 50
+#define setpoint 30
+
+int c = 1000;  
+
+SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
+
 
 /*********** RC alias *****************/
 
@@ -579,6 +594,7 @@ void setup() {
   #if !defined(GPS_PROMINI)
     // Added by Dan, to replace Serial.cpp and Protocol.cpp
     Serial.begin(9600);
+    UltrasonicBus.begin(9600);     
 
 // Commented out by Dan
 //    SerialOpen(0,SERIAL0_COM_SPEED);
@@ -777,6 +793,32 @@ void go_disarm() {
   }
 }
 
+
+void SRF01_Cmd(byte Address, byte cmd) {                     // Function to send commands to the SRF01
+  pinMode(txrxPin, OUTPUT);                                  // Set pin to output and send break by sending pin low, waiting 2ms and sending it high again for 1ms
+  digitalWrite(txrxPin, LOW);
+  delay(2);
+  digitalWrite(txrxPin, HIGH);
+  delay(1);
+  UltrasonicBus.write(Address);                              // Send the address of the SRF01
+  UltrasonicBus.write(cmd);                                  // Send commnd byte to SRF01
+  pinMode(txrxPin, INPUT);                                   // Make input ready for Rx
+  int availableJunk = UltrasonicBus.available();             // Filter out the junk data
+  for (int x = 0; x < availableJunk; x++) {
+    byte junk = UltrasonicBus.read();
+  }
+}
+
+int doRange(byte Address) {
+  SRF01_Cmd(Address, getRange);                              // Calls a function to get range from SRF01
+  while (UltrasonicBus.available() < 2);                     // Waits to get good data
+  byte highByte = UltrasonicBus.read();                      // Get high byte
+  byte lowByte = UltrasonicBus.read();                       // Get low byte
+  int dist = ((highByte << 8) + lowByte);                    // Put them together
+  return dist;
+}
+
+
 // ******** Main Loop *********
 void loop () {
   static uint8_t rcDelayCommand; // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
@@ -811,6 +853,23 @@ void loop () {
     }
   }
 
+  UltrasonicBus.listen();
+  if (UltrasonicBus.isListening()) {
+    int dist = doRange(srfAddress1);
+    if (dist < setpoint &&  c < 1951) {
+      c = c + jump;
+//      Serial.print(c);
+      delay(20);
+    }
+    else if (dist > setpoint && c > 1000) {
+      c = c - jump;
+//      Serial.print(c);
+      delay(20);
+    }
+  }
+
+  conf.throttleIn = c;
+  
   if(reader[0]==9){
   //if(readIn==9000){  
     if (!f.ARMED) f.ARMED = 1;
@@ -820,7 +879,8 @@ void loop () {
 
   if(reader[0]==1){
   //if(readIn > 1000 && readIn < 2001) {
-    conf.throttleIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
+//    conf.throttleIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
+  
     //conf.throttleIn = readIn;
     //inString = "";
   }
