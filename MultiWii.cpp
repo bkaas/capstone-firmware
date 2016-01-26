@@ -40,7 +40,10 @@ int tmpint;  //kaas
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm
 #define getStatus 0x5F
 #define jump 50
-#define setpoint 30
+#define setpoint 40
+int ultraCount = 0;
+int distAVG = 0;
+int thrErr = 0;
 
 /***Control Variables***/
 int throttleErr = 1000; int rollErr; int pitchErr; int yawErr;
@@ -862,30 +865,55 @@ void loop () {
     }
   }
 
-  /*
-  UltrasonicBus.listen();
-  if (UltrasonicBus.isListening() && currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    int dist = doRange(srfAddress1);
-      c += 20*(setpoint - dist);
-      if ( c > 1999 ) c = 1999;
-      if (c < 1001 ) c = 1001;
-//      Serial.print(c);
-      delay(20);
+ 
+//Only listen to the Ultrasonic on every 100th iteration
+  
+
+    UltrasonicBus.listen();
+    
+    if (UltrasonicBus.isListening()) {
+      int dist = doRange(srfAddress1);
+      distAVG += dist/100;
       
-//    else if (dist > setpoint && c > 1000) {
-//      c -= 1.5*abs(setpoint - dist);
-////      Serial.print(c);m
-//      delay(20);
-//    }
+      if(ultraCount > 100){    
+        thrErr += 3*(setpoint - distAVG);
+        if ( thrErr > 1999 ) thrErr = 1999;
+        if ( thrErr < 1201 ) thrErr = 1201;
+        delay(20);
+        conf.throttleIn = thrErr;
+
+         ultraCount = 0;
+         distAVG = 0;
+       } 
+       ultraCount++;
+    }
+        
+  //    else if (dist > setpoint && c > 1000) {
+  //      c -= 1.5*abs(setpoint - dist);
+  ////      Serial.print(c);m
+  //      delay(20);
+  //    }
+    
+  
+    
+//    Serial.print(c);
+//    Serial.println();
+   
+
+  
+  if(reader[0]==9){
+    if (!f.ARMED) f.ARMED = 1;
+    else if (f.ARMED) f.ARMED = 0;
+    conf.throttleIn = 1000;
+    calibratingA=512;
   }
-  */
+  
 
 /***************************************CONTROL SEQUENCE******************************************/  
   
   //roll 0, pitch 1, yaw 2
 
-  
+/* 
   Serial.print("roll =   ");
   Serial.print(imu.gyroADC[0]);
   Serial.print("   ");
@@ -912,18 +940,13 @@ void loop () {
   if(pitchErr > 1999) pitchErr = 1999;
   if(pitchErr < 1101) pitchErr = 1101;
 
+*/
   //Serial.print(rollZero); Serial.print("    "); Serial.print(imu.gyroADC[0]); Serial.print("    "); Serial.print(rollErr);  Serial.println();
   
 //  conf.throttleIn = 1200;
 //  conf.rollIn = 1200;   //1500+ right; 1500- left
 //  conf.pitchIn  = 1200;   //1500+ forward; 1500- backward
   
-  if(reader[0]==9){
-  //if(readIn==9000){  
-    if (!f.ARMED) f.ARMED = 1;
-    else if (f.ARMED) f.ARMED = 0;
-    //inString = "";
-  }
 
 //  if(reader[0]==1){
   //if(readIn > 1000 && readIn < 2001) {
