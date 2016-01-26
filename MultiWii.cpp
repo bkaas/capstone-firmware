@@ -42,7 +42,9 @@ int tmpint;  //kaas
 #define jump 50
 #define setpoint 30
 
-int c = 1000;  
+int c = 1000;
+unsigned long previousMillis = 0;
+const long interval = 150;  
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 
@@ -838,6 +840,7 @@ void loop () {
   static uint32_t timestamp_fixated = 0;
   int16_t rc;
   int32_t prop = 0;
+  unsigned long currentMillis = millis();
 
 // This should be Wire stuff, you fucks. - Dan
   while(Serial.available()) {
@@ -854,7 +857,8 @@ void loop () {
   }
 
   UltrasonicBus.listen();
-  if (UltrasonicBus.isListening()) {
+  if (UltrasonicBus.isListening() && currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
     int dist = doRange(srfAddress1);
       c += 20*(setpoint - dist);
       if ( c > 1999 ) c = 1999;
@@ -878,13 +882,13 @@ void loop () {
     //inString = "";
   }
 
-  if(reader[0]==1){
+//  if(reader[0]==1){
   //if(readIn > 1000 && readIn < 2001) {
 //    conf.throttleIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
   
     //conf.throttleIn = readIn;
     //inString = "";
-  }
+//  }
 
 //  if(reader[0]==2){
 //    reader[0]=reader[0]-1;
