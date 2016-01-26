@@ -316,8 +316,8 @@ ISR(PCINT0_vect) {
       if (900 < diff && diff < 2200 && chan < RC_CHANS && f.ARMED) { //Only if the signal is between these values it is valid, otherwise the failsafe counter should move up
         rcValue[chan] = diff;
         rcValue[0]=conf.throttleIn; //alex
-        //rcValue[1]=conf.rollIn; //Dan
-        //rcValue[2]=conf.pitchIn; //Dan
+        rcValue[1]=conf.rollIn; //Dan
+        rcValue[2]=conf.pitchIn; //Dan
 #if defined(FAILSAFE)
         if (chan < 4 && diff > FAILSAFE_DETECT_TRESHOLD) GoodPulses |= (1 << chan); // if signal is valid - mark channel as OK
         if (GoodPulses == 0x0F) {                                            // If first four chanells have good pulses, clear FailSafe counter

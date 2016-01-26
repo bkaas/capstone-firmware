@@ -42,11 +42,17 @@ int tmpint;  //kaas
 #define jump 50
 #define setpoint 30
 
-int c = 1000;
+/***Control Variables***/
+int throttleErr = 1000; int rollErr; int pitchErr; int yawErr;
 unsigned long previousMillis = 0;
 const long interval = 150;  
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
+
+/****Control Variables****/  //added by Kaas
+int counter = 0;
+int rollZero; int pitchZero; int yawZero;
+int rollVal; int pitchVal; int yawVal;
 
 
 /*********** RC alias *****************/
@@ -856,6 +862,7 @@ void loop () {
     }
   }
 
+  /*
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening() && currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
@@ -872,8 +879,44 @@ void loop () {
 //      delay(20);
 //    }
   }
+  */
 
-  conf.throttleIn = c;
+/***************************************CONTROL SEQUENCE******************************************/  
+  
+  //roll 0, pitch 1, yaw 2
+
+  
+  Serial.print("roll =   ");
+  Serial.print(imu.gyroADC[0]);
+  Serial.print("   ");
+  Serial.print("pitch =   ");
+  Serial.print(imu.gyroADC[1]);
+  Serial.print("   ");
+  Serial.print("yaw =   ");
+  Serial.print(imu.gyroADC[2]);
+  Serial.println("   ");
+  
+
+  if(counter == 10){
+    rollZero = imu.gyroADC[0];
+    pitchZero = imu.gyroADC[1];
+    yawZero = imu.gyroADC[2];
+  } counter++;
+  
+  rollErr = 0.01*(rollZero - imu.gyroADC[0]);
+  pitchErr = (pitchZero - imu.gyroADC[1]);
+
+  if(rollErr > 1999) rollErr = 1999;
+  if(rollErr < 1101) rollErr = 1101;
+
+  if(pitchErr > 1999) pitchErr = 1999;
+  if(pitchErr < 1101) pitchErr = 1101;
+
+  //Serial.print(rollZero); Serial.print("    "); Serial.print(imu.gyroADC[0]); Serial.print("    "); Serial.print(rollErr);  Serial.println();
+  
+//  conf.throttleIn = 1200;
+//  conf.rollIn = 1200;   //1500+ right; 1500- left
+//  conf.pitchIn  = 1200;   //1500+ forward; 1500- backward
   
   if(reader[0]==9){
   //if(readIn==9000){  
