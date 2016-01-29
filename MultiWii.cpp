@@ -918,7 +918,7 @@ void loop () {
 //  ultraCount++;
 
   conf.throttleIn = 1800;
-  Serial.print(OCR1A); Serial.print("    ");Serial.print(OCR1B); Serial.print("    ");Serial.print(OCR2A); Serial.print("    ");Serial.println(OCR2B);
+//  Serial.print(OCR1A); Serial.print("    ");Serial.print(OCR1B); Serial.print("    ");Serial.print(OCR2A); Serial.print("    ");Serial.println(OCR2B);
   //    else if (dist > setpoint && c > 1000) {
   //      c -= 1.5*abs(setpoint - dist);
   ////      Serial.print(c);m
