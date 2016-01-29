@@ -847,7 +847,13 @@ int doRange(byte Address) {
 
 long previousMillis=0;
 long interval = 5000;
-// ******** Main Loop *********
+
+//************************************************************
+//************************************************************
+// *************************** Main Loop *********************
+//************************************************************
+//************************************************************
+
 void loop () {
   unsigned long currentMillis = millis();
   if(currentMillis-previousMillis>interval){
@@ -874,7 +880,7 @@ void loop () {
   int32_t prop = 0;
 
 
-  // This should be Wire stuff, you fucks. - Dan
+//   This should be Wire stuff, you fucks. - Dan
 //  while (Serial.available()) {
 //    //int inChar = Serial.read();
 //    for (int i = 0; i < 4; i++) {
@@ -884,7 +890,7 @@ void loop () {
 //      reader[i] = tmpstr.toInt();
 //      //      inString += (char)inChar;
 //      //      readIn = inString.toInt();
-//      delay(2);
+////      delay(2);
 //    }
 //  }
 
@@ -911,7 +917,8 @@ void loop () {
   
 //  ultraCount++;
 
-  conf.throttleIn = 1990;
+  conf.throttleIn = 1800;
+  Serial.print(OCR1A); Serial.print("    ");Serial.print(OCR1B); Serial.print("    ");Serial.print(OCR2A); Serial.print("    ");Serial.println(OCR2B);
   //    else if (dist > setpoint && c > 1000) {
   //      c -= 1.5*abs(setpoint - dist);
   ////      Serial.print(c);m
