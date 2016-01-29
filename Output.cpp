@@ -93,8 +93,6 @@ void writeMotors() { // [1000;2000] => [125;250]
       OCR1B = (motor[1] - 1000) >> 2; //  pin 10
       OCR2A = (motor[2] - 1000) >> 2; //  pin 11
       OCR2B = (motor[3] - 1000) >> 2; //  pin 3
-      digitalWrite(12,HIGH);
-      digitalWrite(12,LOW); //shiiiit daaaawg
     #elif defined(EXT_MOTOR_4KHZ)
       OCR1A = (motor[0] - 1000) << 1; //  pin 9
       OCR1B = (motor[1] - 1000) << 1; //  pin 10
