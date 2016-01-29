@@ -47,8 +47,6 @@ int thrErr = 0;
 
 /***Control Variables***/
 int throttleErr = 1000; int rollErr; int pitchErr; int yawErr;
-unsigned long previousMillis = 0;
-const long interval = 150;
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 
@@ -847,9 +845,16 @@ int doRange(byte Address) {
   return dist;
 }
 
-
+long previousMillis=0;
+long interval = 5000;
 // ******** Main Loop *********
 void loop () {
+  unsigned long currentMillis = millis();
+  if(currentMillis-previousMillis>interval){
+    previousMillis = currentMillis;
+    go_disarm();
+  }
+  
   static uint8_t rcDelayCommand; // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
   static uint8_t rcSticks;       // this hold sticks position for command combos
   uint8_t axis, i;
@@ -867,45 +872,46 @@ void loop () {
   static uint32_t timestamp_fixated = 0;
   int16_t rc;
   int32_t prop = 0;
-  unsigned long currentMillis = millis();
+
 
   // This should be Wire stuff, you fucks. - Dan
-  while (Serial.available()) {
-    //int inChar = Serial.read();
-    for (int i = 0; i < 4; i++) {
-      //      reader[i] = Serial.read(); //added by Dan, in place of all the casting
-      tmpint = Serial.read(); //use this with Kaas' computer, if we have to
-      tmpstr = (char)tmpint;
-      reader[i] = tmpstr.toInt();
-      //      inString += (char)inChar;
-      //      readIn = inString.toInt();
-      delay(2);
-    }
-  }
+//  while (Serial.available()) {
+//    //int inChar = Serial.read();
+//    for (int i = 0; i < 4; i++) {
+//      //      reader[i] = Serial.read(); //added by Dan, in place of all the casting
+//      tmpint = Serial.read(); //use this with Kaas' computer, if we have to
+//      tmpstr = (char)tmpint;
+//      reader[i] = tmpstr.toInt();
+//      //      inString += (char)inChar;
+//      //      readIn = inString.toInt();
+//      delay(2);
+//    }
+//  }
 
 
   //Only listen to the Ultrasonic on every 150th iteration
-  UltrasonicBus.listen();
+//  UltrasonicBus.listen();
+//  
+//  if (ultraCount > 50) {
+//    if (UltrasonicBus.isListening()) {
+//      int dist = doRange(srfAddress1);
+//      distAVG += dist;
+//    }
+////    thrErr += 3*(setpoint - distAVG/100);
+//    thrErr += 25 * (setpoint - distAVG);
+//    if ( thrErr > 1999 ) thrErr = 1999;
+//    if ( thrErr < 1501 ) thrErr = 1501;
+//
+//    //        delay(20);
+//    conf.throttleIn = thrErr;
+//
+//    ultraCount = 0;
+//    distAVG = 0;
+//  }
   
-  if (ultraCount > 50) {
-    if (UltrasonicBus.isListening()) {
-      int dist = doRange(srfAddress1);
-      distAVG += dist;
-    }
-//    thrErr += 3*(setpoint - distAVG/100);
-    thrErr += 25 * (setpoint - distAVG);
-    if ( thrErr > 1999 ) thrErr = 1999;
-    if ( thrErr < 1501 ) thrErr = 1501;
+//  ultraCount++;
 
-    //        delay(20);
-    conf.throttleIn = thrErr;
-
-    ultraCount = 0;
-    distAVG = 0;
-  }
-
-  ultraCount++;
-
+  conf.throttleIn = 1990;
   //    else if (dist > setpoint && c > 1000) {
   //      c -= 1.5*abs(setpoint - dist);
   ////      Serial.print(c);m
@@ -919,12 +925,12 @@ void loop () {
 
 
 
-  if (reader[0] == 9) {
-    if (!f.ARMED) f.ARMED = 1;
-    else if (f.ARMED) f.ARMED = 0;
-    conf.throttleIn = 1000;
-    calibratingA=512;
-  }
+//  if (reader[0] == 9) {
+//    if (!f.ARMED) f.ARMED = 1;
+//    else if (f.ARMED) f.ARMED = 0;
+//    conf.throttleIn = 1000;
+//    calibratingA=512;
+//  }
 
 
   /***************************************CONTROL SEQUENCE******************************************/
@@ -1042,10 +1048,10 @@ void loop () {
     }
     if (rcDelayCommand == 20) {
       if (f.ARMED) {                  // actions during armed
-#ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
-        //if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) go_disarm();    // Disarm via YAW
+#ifdef ALLOW_ARM_DISARM_VIA_TX_YAW//alex
+        if (conf.activate[BOXARM] == 0 && rcSticks == 1950 + YAW_LO + PIT_CE + ROL_CE) go_disarm();    // Disarm via YAW
 #endif
-#ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
+#ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL 
         //if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO) go_disarm();    // Disarm via ROLL
 #endif
       } else {                        // actions during not armed
