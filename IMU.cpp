@@ -200,8 +200,6 @@ void getEstimatedAttitude(){
   #endif
 }
 
-
-/*************Ultrasonic Stuff Begins***************/// - Fucked wit by Dan
 #define UPDATE_INTERVAL 25000    // 40hz update rate (20hz LPF on acc)
 #define BARO_TAB_SIZE   21
 
@@ -217,6 +215,7 @@ void getEstimatedAttitude(){
     value += deadband;                  \
   }
 
+#if BARO
 uint8_t getEstimatedAltitude(){
   int32_t  BaroAlt;
   static float baroGroundTemperatureScale,logBaroGroundPressureSum;
@@ -224,29 +223,26 @@ uint8_t getEstimatedAltitude(){
   static uint16_t previousT;
   uint16_t currentT = micros();
   uint16_t dTime;
-  int setpointAlt = 6000;
 
   dTime = currentT - previousT;
   if (dTime < UPDATE_INTERVAL) return 0;
   previousT = currentT;
 
   if(calibratingB > 0) {
-//    logBaroGroundPressureSum = log(baroPressureSum);
-//    baroGroundTemperatureScale = (baroTemperature + 27315) *  29.271267f;
+    logBaroGroundPressureSum = log(baroPressureSum);
+    baroGroundTemperatureScale = (baroTemperature + 27315) *  29.271267f;
     calibratingB--;
   }
 
   // baroGroundPressureSum is not supposed to be 0 here
   // see: https://code.google.com/p/ardupilot-mega/source/browse/libraries/AP_Baro/AP_Baro.cpp
-  //BaroAlt = ( logBaroGroundPressureSum - log(baroPressureSum) ) * baroGroundTemperatureScale;
-  BaroAlt = baroPressureSum;
+  BaroAlt = ( logBaroGroundPressureSum - log(baroPressureSum) ) * baroGroundTemperatureScale;
 
   alt.EstAlt = (alt.EstAlt * 6 + BaroAlt * 2) >> 3; // additional LPF to reduce baro noise (faster by 30 µs)
 
-//  #if (defined(VARIOMETER) && (VARIOMETER != 2)) || !defined(SUPPRESS_BARO_ALTHOLD)
+  #if (defined(VARIOMETER) && (VARIOMETER != 2)) || !defined(SUPPRESS_BARO_ALTHOLD)
     //P
-    //int16_t error16 = constrain(AltHold - alt.EstAlt, -300, 300); // - Commented out by Dan
-    int16_t error16 = constrain(setpointAlt - alt.EstAlt, -300, 300); // - Added by Dan to give proportional error in elevation wrt setpoint
+    int16_t error16 = constrain(AltHold - alt.EstAlt, -300, 300);
     applyDeadband(error16, 10); //remove small P parametr to reduce noise near zero position
     BaroPID = constrain((conf.pid[PIDALT].P8 * error16 >>7), -150, +150);
 
@@ -286,7 +282,8 @@ uint8_t getEstimatedAltitude(){
     alt.vario = vel;
     applyDeadband(alt.vario, 5);
     BaroPID -= constrain(conf.pid[PIDALT].D8 * alt.vario >>4, -150, 150);
-//  #endif
+  #endif
   return 1;
 }
+#endif //BARO
 

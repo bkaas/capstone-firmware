@@ -4,7 +4,6 @@
 #define  VERSION  232
 
 #include "types.h"
-#include "SoftwareSerial.h"
 
 // default POSHOLD control gains
 #define POSHOLD_P              .11
@@ -69,12 +68,11 @@ extern int16_t gyroZero[3];
 extern int16_t angle[2];
 
 
-//#if BARO - Commented out by Dan
+#if BARO
   extern int32_t baroPressure;
   extern int32_t baroTemperature;
   extern int32_t baroPressureSum;
-  extern SoftwareSerial UltrasonicBus; // added by Dan
-//#endif
+#endif
 
 extern int16_t axisPID[3];
 extern int16_t motor[8];

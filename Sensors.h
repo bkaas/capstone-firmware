@@ -17,9 +17,9 @@ void Gyro_getADC ();
 uint8_t Mag_getADC();
 #endif
 
-//#if defined(BMP085) || defined(MS561101BA) - Commented out by Dan
+#if defined(BMP085) || defined(MS561101BA)
 uint8_t Baro_update();
-//#endif
+#endif
 
 #if SONAR
 void Sonar_update();

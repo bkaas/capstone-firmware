@@ -44,9 +44,9 @@ enum box {
     BOXANGLE,
     BOXHORIZON,
   #endif
-  //#if BARO && (!defined(SUPPRESS_BARO_ALTHOLD)) - Commented out by Dan
+  #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
     BOXBARO,
-  //#endif
+  #endif
   #ifdef VARIOMETER
     BOXVARIO,
   #endif

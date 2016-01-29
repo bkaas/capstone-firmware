@@ -3,9 +3,9 @@
 
 #define BARO_TAB_SIZE   21
 
-//#if BARO - Commented out by Dan
+#if BARO
 uint8_t getEstimatedAltitude();
-//#endif
+#endif
 
 void computeIMU();
 

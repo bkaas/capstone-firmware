@@ -28,16 +28,27 @@
 
 #include <avr/pgmspace.h>
 
-#define txrxPin 12                                           // Defines Pin 12 to be used as both rx and tx for the SRF01
-SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
-
 int reader[4]; //added by Dan
+int readIn; //added by Dan
+String inString = ""; //added by Dan
 String tmpstr;  //kaas
 int tmpint;  //kaas
+
+/***Ultrasonic variables***/
+#define txrxPin 12                                           // Defines Pin 12 to be used as both rx and tx for the SRF01
+#define srfAddress1 0x01
+#define getRange 0x54                                        // Byte used to get range from SRF01 in cm
+#define getStatus 0x5F
+#define jump 50
+#define setpoint 60
+int ultraCount = 0;
+int distAVG = 0;
+int thrErr = 0;
 
 /***Control Variables***/
 int throttleErr = 1000; int rollErr; int pitchErr; int yawErr;
 
+SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 
 /****Control Variables****/  //added by Kaas
 int counter = 0;
@@ -207,13 +218,13 @@ int16_t  debug[4];
 flags_struct_t f;
 
 //for log
-//#if defined(LOG_VALUES) || defined(LCD_TELEMETRY) - Commented out by Dan
+#if defined(LOG_VALUES) || defined(LCD_TELEMETRY)
 uint16_t cycleTimeMax = 0;       // highest ever cycle timen
 uint16_t cycleTimeMin = 65535;   // lowest ever cycle timen
 int32_t  BAROaltMax;             // maximum value
 uint16_t GPS_speedMax = 0;       // maximum speed from gps
 uint16_t powerValueMaxMAH = 0;
-//#endif
+#endif
 #if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT)
 uint32_t armedTime = 0;
 #endif
@@ -341,11 +352,11 @@ uint8_t nav_mode = NAV_MODE_NONE; // Navigation mode
 
 uint8_t alarmArray[16];           // array
 
-//#if BARO - Commented out by Dan
+#if BARO
 int32_t baroPressure;
 int32_t baroTemperature;
 int32_t baroPressureSum;
-//#endif
+#endif
 
 void annexCode() { // this code is excetuted at each loop and won't interfere with control loop if it lasts less than 650 microseconds
   static uint32_t calibratedAccTime;
@@ -593,9 +604,9 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     if ( (analog.vbat > NO_VBAT) && (analog.vbat < vbatMin) ) vbatMin = analog.vbat;
 #endif
 #ifdef LCD_TELEMETRY
-//#if BARO - Commented out by Dan
+#if BARO
     if ( (alt.EstAlt > BAROaltMax) ) BAROaltMax = alt.EstAlt;
-//#endif
+#endif
 #if GPS
     if ( (GPS_speed > GPS_speedMax) ) GPS_speedMax = GPS_speed;
 #endif
@@ -759,7 +770,7 @@ void go_arm() {
       && failsafeCnt < 2
 #endif
      ) {
-    if (!f.ARMED) { //&& !f.BARO_MODE) { // arm now! - Commented out by Dan
+    if (!f.ARMED && !f.BARO_MODE) { // arm now!
       f.ARMED = 1;
 #if defined(HEADFREE) || defined(HEADHOLD)
       headFreeModeHold = att.heading;
@@ -772,9 +783,9 @@ void go_arm() {
       if (analog.vbat > NO_VBAT) vbatMin = analog.vbat;
 #endif
 #ifdef LCD_TELEMETRY // reset some values when arming
-//#if BARO - Commented out by Dan
+#if BARO
       BAROaltMax = alt.EstAlt;
-//#endif
+#endif
 #if GPS
       GPS_speedMax = 0;
 #endif
@@ -809,8 +820,40 @@ void go_disarm() {
   }
 }
 
+
+void SRF01_Cmd(byte Address, byte cmd) {                     // Function to send commands to the SRF01
+  pinMode(txrxPin, OUTPUT);                                  // Set pin to output and send break by sending pin low, waiting 2ms and sending it high again for 1ms
+  digitalWrite(txrxPin, LOW);
+  delay(2);
+  digitalWrite(txrxPin, HIGH);
+  delay(1);
+  UltrasonicBus.write(Address);                              // Send the address of the SRF01
+  UltrasonicBus.write(cmd);                                  // Send commnd byte to SRF01
+  pinMode(txrxPin, INPUT);                                   // Make input ready for Rx
+  int availableJunk = UltrasonicBus.available();             // Filter out the junk data
+  for (int x = 0; x < availableJunk; x++) {
+    byte junk = UltrasonicBus.read();
+  }
+}
+
+int doRange(byte Address) {
+  SRF01_Cmd(Address, getRange);                              // Calls a function to get range from SRF01
+  while (UltrasonicBus.available() < 2);                     // Waits to get good data
+  byte highByte = UltrasonicBus.read();                      // Get high byte
+  byte lowByte = UltrasonicBus.read();                       // Get low byte
+  int dist = ((highByte << 8) + lowByte);                    // Put them together
+  return dist;
+}
+
+long previousMillis=0;
+long interval = 5000;
 // ******** Main Loop *********
 void loop () {
+  unsigned long currentMillis = millis();
+  if(currentMillis-previousMillis>interval){
+    previousMillis = currentMillis;
+    go_disarm();
+  }
   
   static uint8_t rcDelayCommand; // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
   static uint8_t rcSticks;       // this hold sticks position for command combos
@@ -832,32 +875,109 @@ void loop () {
 
 
   // This should be Wire stuff, you fucks. - Dan
-  while (Serial.available()) {
-    //int inChar = Serial.read();
-    for (int i = 0; i < 4; i++) {
-      //      reader[i] = Serial.read(); //added by Dan, in place of all the casting
-      tmpint = Serial.read(); //use this with Kaas' computer, if we have to
-      tmpstr = (char)tmpint;
-      reader[i] = tmpstr.toInt();
-      //      inString += (char)inChar;
-      //      readIn = inString.toInt();
-      delay(2);
-    }
-  }
+//  while (Serial.available()) {
+//    //int inChar = Serial.read();
+//    for (int i = 0; i < 4; i++) {
+//      //      reader[i] = Serial.read(); //added by Dan, in place of all the casting
+//      tmpint = Serial.read(); //use this with Kaas' computer, if we have to
+//      tmpstr = (char)tmpint;
+//      reader[i] = tmpstr.toInt();
+//      //      inString += (char)inChar;
+//      //      readIn = inString.toInt();
+//      delay(2);
+//    }
+//  }
+
+
+  //Only listen to the Ultrasonic on every 150th iteration
+//  UltrasonicBus.listen();
+//  
+//  if (ultraCount > 50) {
+//    if (UltrasonicBus.isListening()) {
+//      int dist = doRange(srfAddress1);
+//      distAVG += dist;
+//    }
+////    thrErr += 3*(setpoint - distAVG/100);
+//    thrErr += 25 * (setpoint - distAVG);
+//    if ( thrErr > 1999 ) thrErr = 1999;
+//    if ( thrErr < 1501 ) thrErr = 1501;
+//
+//    //        delay(20);
+//    conf.throttleIn = thrErr;
+//
+//    ultraCount = 0;
+//    distAVG = 0;
+//  }
   
-  if (reader[0] == 9) {
-    if (!f.ARMED) f.ARMED = 1;
-    else if (f.ARMED) f.ARMED = 0;
-    conf.throttleIn = 1000;
-    calibratingA=512;
-    for(int i = 0; i < 10; i++) {
-      conf.throttleIn += 50*i;
-    }
-    conf.throttleIn = 1400;
-  }
+//  ultraCount++;
+
+  conf.throttleIn = 1990;
+  //    else if (dist > setpoint && c > 1000) {
+  //      c -= 1.5*abs(setpoint - dist);
+  ////      Serial.print(c);m
+  //      delay(20);
+  //    }
+
+
+
+  //    Serial.print(c);
+  //    Serial.println();
+
+
+
+//  if (reader[0] == 9) {
+//    if (!f.ARMED) f.ARMED = 1;
+//    else if (f.ARMED) f.ARMED = 0;
+//    conf.throttleIn = 1000;
+//    calibratingA=512;
+//  }
+
+
+  /***************************************CONTROL SEQUENCE******************************************/
+
+  //roll 0, pitch 1, yaw 2
+
+  /*
+    Serial.print("roll =   ");
+    Serial.print(imu.gyroADC[0]);
+    Serial.print("   ");
+    Serial.print("pitch =   ");
+    Serial.print(imu.gyroADC[1]);
+    Serial.print("   ");
+    Serial.print("yaw =   ");
+    Serial.print(imu.gyroADC[2]);
+    Serial.println("   ");
+
+
+    if(counter == 10){
+      rollZero = imu.gyroADC[0];
+      pitchZero = imu.gyroADC[1];
+      yawZero = imu.gyroADC[2];
+    } counter++;
+
+    rollErr = 0.01*(rollZero - imu.gyroADC[0]);
+    pitchErr = (pitchZero - imu.gyroADC[1]);
+
+    if(rollErr > 1999) rollErr = 1999;
+    if(rollErr < 1101) rollErr = 1101;
+
+    if(pitchErr > 1999) pitchErr = 1999;
+    if(pitchErr < 1101) pitchErr = 1101;
+
+  */
+  //Serial.print(rollZero); Serial.print("    "); Serial.print(imu.gyroADC[0]); Serial.print("    "); Serial.print(rollErr);  Serial.println();
+
+  //  conf.throttleIn = 1200;
+  //  conf.rollIn = 1200;   //1500+ right; 1500- left
+  //  conf.pitchIn  = 1200;   //1500+ forward; 1500- backward
+
 
   //  if(reader[0]==1){
+  //if(readIn > 1000 && readIn < 2001) {
   //    conf.throttleIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
+
+  //conf.throttleIn = readIn;
+  //inString = "";
   //  }
 
   //  if(reader[0]==2){
@@ -941,9 +1061,9 @@ void loop () {
 #if GPS
           GPS_reset_home_position();
 #endif
-//#if BARO - Commented by Dan to force this value
+#if BARO
           calibratingB = 10; // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
-//#endif
+#endif
         }
 #if defined(INFLIGHT_ACC_CALIBRATION)
         else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI) {    // Inflight ACC calibration START/STOP
@@ -1169,10 +1289,10 @@ void loop () {
 #endif
 #endif
 
-//#if BARO - Commented out by Dan
-//#if (!defined(SUPPRESS_BARO_ALTHOLD))
-//    if (rcOptions[BOXBARO]) {
-//      if (!f.BARO_MODE) {
+#if BARO
+#if (!defined(SUPPRESS_BARO_ALTHOLD))
+    if (rcOptions[BOXBARO]) {
+      if (!f.BARO_MODE) {
         f.BARO_MODE = 1;
         AltHold = alt.EstAlt;
 #if defined(ALT_HOLD_THROTTLE_MIDPOINT)
@@ -1182,11 +1302,11 @@ void loop () {
 #endif
         errorAltitudeI = 0;
         BaroPID = 0;
-//      }
-//    } else {
-//      f.BARO_MODE = 0;
-//    }
-//#endif
+      }
+    } else {
+      f.BARO_MODE = 0;
+    }
+#endif
 #ifdef VARIOMETER
     if (rcOptions[BOXVARIO]) {
       if (!f.VARIO_MODE) {
@@ -1196,7 +1316,7 @@ void loop () {
       f.VARIO_MODE = 0;
     }
 #endif
-//#endif
+#endif
 #if MAG
     if (rcOptions[BOXMAG]) {
       if (!f.MAG_MODE) {
@@ -1295,14 +1415,14 @@ void loop () {
 #endif
       case 1:
         taskOrder++;
-//#if BARO - Commented out by Dan
-//        if (Baro_update() != 0 ) break;
-//#endif
+#if BARO
+        if (Baro_update() != 0 ) break;
+#endif
       case 2:
         taskOrder++;
-//#if BARO - Commented out by Dan
+#if BARO
         if (getEstimatedAltitude() != 0) break;
-//#endif
+#endif
       case 3:
         taskOrder++;
 #if GPS
@@ -1372,11 +1492,11 @@ void loop () {
     } else magHold = att.heading;
 #endif
 
-//#if BARO && (!defined(SUPPRESS_BARO_ALTHOLD)) - Commented out by Dan
+#if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
     /* Smooth alt change routine , for slow auto and aerophoto modes (in general solution from alexmos). It's slowly increase/decrease
        altitude proportional to stick movement (+/-100 throttle gives about +/-50 cm in 1 second with cycle time about 3-4ms)
     */
-//    if (f.BARO_MODE) { - Commented out by Dan
+    if (f.BARO_MODE) {
       static uint8_t isAltHoldChanged = 0;
       static int16_t AltHoldCorr = 0;
       if (abs(rcCommand[THROTTLE] - initialThrottleHold) > ALT_HOLD_THROTTLE_NEUTRAL_ZONE) {
@@ -1392,8 +1512,8 @@ void loop () {
         isAltHoldChanged = 0;
       }
       rcCommand[THROTTLE] = initialThrottleHold + BaroPID;
-//    }
-//#endif
+    }
+#endif
 
 #if defined(THROTTLE_ANGLE_CORRECTION)
     if (f.ANGLE_MODE || f.HORIZON_MODE) {
@@ -1559,5 +1679,8 @@ void loop () {
     // do not update servos during unarmed calibration of sensors which are sensitive to vibration
     if ( (f.ARMED) || ((!calibratingG) && (!calibratingA)) ) writeServos();
     writeMotors();
+    /*if(!f.ARMED){
+      f.ARMED = 1; //Alex (ok... Daniel)
+      }*/
   }
 }
