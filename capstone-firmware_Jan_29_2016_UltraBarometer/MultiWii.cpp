@@ -850,10 +850,10 @@ void loop () {
     else if (f.ARMED) f.ARMED = 0;
     conf.throttleIn = 1000;
     calibratingA=512;
-    for(int i = 0; i < 10; i++) {
-      conf.throttleIn += 50*i;
-    }
-    conf.throttleIn = 1400;
+//    for(int i = 0; i < 10; i++) { - Commented out by Dan for testing the spoof barometer + setpoint, uncomment without the setpoint in IMU to test normally
+//      conf.throttleIn += 50*i;
+//    }
+//    conf.throttleIn = 1500;
   }
 
   //  if(reader[0]==1){
