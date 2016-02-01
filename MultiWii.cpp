@@ -8,8 +8,6 @@
   any later version. see <http://www.gnu.org/licenses/>
 */
 
-#include <SoftwareSerial.h>
-
 #include <avr/io.h>
 #include "Wire.h"
 
@@ -28,32 +26,8 @@
 
 #include <avr/pgmspace.h>
 
-int reader[4]; //added by Dan
-int readIn; //added by Dan
-String inString = ""; //added by Dan
-String tmpstr;  //kaas
-int tmpint;  //kaas
 
-/***Ultrasonic variables***/
-#define txrxPin 12                                           // Defines Pin 12 to be used as both rx and tx for the SRF01
-#define srfAddress1 0x01
-#define getRange 0x54                                        // Byte used to get range from SRF01 in cm
-#define getStatus 0x5F
-#define jump 50
-#define setpoint 60
-int ultraCount = 0;
-int distAVG = 0;
-int thrErr = 0;
-
-/***Control Variables***/
-int throttleErr = 1000; int rollErr; int pitchErr; int yawErr;
-
-SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
-
-/****Control Variables****/  //added by Kaas
-int counter = 0;
-int rollZero; int pitchZero; int yawZero;
-int rollVal; int pitchVal; int yawVal;
+//#define BIND_CAPABLE 1
 
 
 /*********** RC alias *****************/
@@ -541,7 +515,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     serialCom();
   }
 #else
-  //serialCom();
+  serialCom();
 #endif
 #endif
 
@@ -619,20 +593,17 @@ static uint32_t PIDTime = 0;
 
 void setup() {
 #if !defined(GPS_PROMINI)
-  // Added by Dan, to replace Serial.cpp and Protocol.cpp
-  Serial.begin(9600);
-  UltrasonicBus.begin(9600);
 
   // Commented out by Dan
-  //    SerialOpen(0,SERIAL0_COM_SPEED);
-  //    #if defined(PROMICRO)
-  //      SerialOpen(1,SERIAL1_COM_SPEED);
-  //    #endif
-  //    #if defined(MEGA)
-  //      SerialOpen(1,SERIAL1_COM_SPEED);
-  //      SerialOpen(2,SERIAL2_COM_SPEED);
-  //      SerialOpen(3,SERIAL3_COM_SPEED);
-  //    #endif
+      SerialOpen(0,SERIAL0_COM_SPEED);
+//      #if defined(PROMICRO)
+//        SerialOpen(1,SERIAL1_COM_SPEED);
+//      #endif
+//      #if defined(MEGA)
+//        SerialOpen(1,SERIAL1_COM_SPEED);
+//        SerialOpen(2,SERIAL2_COM_SPEED);
+//        SerialOpen(3,SERIAL3_COM_SPEED);
+//      #endif
 #endif
   LEDPIN_PINMODE;
   POWERPIN_PINMODE;
@@ -821,45 +792,9 @@ void go_disarm() {
 }
 
 
-void SRF01_Cmd(byte Address, byte cmd) {                     // Function to send commands to the SRF01
-  pinMode(txrxPin, OUTPUT);                                  // Set pin to output and send break by sending pin low, waiting 2ms and sending it high again for 1ms
-  digitalWrite(txrxPin, LOW);
-  delay(2);
-  digitalWrite(txrxPin, HIGH);
-  delay(1);
-  UltrasonicBus.write(Address);                              // Send the address of the SRF01
-  UltrasonicBus.write(cmd);                                  // Send commnd byte to SRF01
-  pinMode(txrxPin, INPUT);                                   // Make input ready for Rx
-  int availableJunk = UltrasonicBus.available();             // Filter out the junk data
-  for (int x = 0; x < availableJunk; x++) {
-    byte junk = UltrasonicBus.read();
-  }
-}
 
-int doRange(byte Address) {
-  SRF01_Cmd(Address, getRange);                              // Calls a function to get range from SRF01
-  while (UltrasonicBus.available() < 2);                     // Waits to get good data
-  byte highByte = UltrasonicBus.read();                      // Get high byte
-  byte lowByte = UltrasonicBus.read();                       // Get low byte
-  int dist = ((highByte << 8) + lowByte);                    // Put them together
-  return dist;
-}
-
-long previousMillis=0;
-long interval = 5000;
-
-//************************************************************
-//************************************************************
-// *************************** Main Loop *********************
-//************************************************************
-//************************************************************
-
+// ******** Main Loop *********//
 void loop () {
-  unsigned long currentMillis = millis();
-  if(currentMillis-previousMillis>interval){
-    previousMillis = currentMillis;
-    go_disarm();
-  }
   
   static uint8_t rcDelayCommand; // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
   static uint8_t rcSticks;       // this hold sticks position for command combos
@@ -879,125 +814,7 @@ void loop () {
   int16_t rc;
   int32_t prop = 0;
 
-
-//   This should be Wire stuff, you fucks. - Dan
-//  while (Serial.available()) {
-//    //int inChar = Serial.read();
-//    for (int i = 0; i < 4; i++) {
-//      //      reader[i] = Serial.read(); //added by Dan, in place of all the casting
-//      tmpint = Serial.read(); //use this with Kaas' computer, if we have to
-//      tmpstr = (char)tmpint;
-//      reader[i] = tmpstr.toInt();
-//      //      inString += (char)inChar;
-//      //      readIn = inString.toInt();
-////      delay(2);
-//    }
-//  }
-
-
-  //Only listen to the Ultrasonic on every 150th iteration
-//  UltrasonicBus.listen();
-//  
-//  if (ultraCount > 50) {
-//    if (UltrasonicBus.isListening()) {
-//      int dist = doRange(srfAddress1);
-//      distAVG += dist;
-//    }
-////    thrErr += 3*(setpoint - distAVG/100);
-//    thrErr += 25 * (setpoint - distAVG);
-//    if ( thrErr > 1999 ) thrErr = 1999;
-//    if ( thrErr < 1501 ) thrErr = 1501;
-//
-//    //        delay(20);
-//    conf.throttleIn = thrErr;
-//
-//    ultraCount = 0;
-//    distAVG = 0;
-//  }
-  
-//  ultraCount++;
-
-  conf.throttleIn = 1800;
-//  Serial.print(OCR1A); Serial.print("    ");Serial.print(OCR1B); Serial.print("    ");Serial.print(OCR2A); Serial.print("    ");Serial.println(OCR2B);
-  //    else if (dist > setpoint && c > 1000) {
-  //      c -= 1.5*abs(setpoint - dist);
-  ////      Serial.print(c);m
-  //      delay(20);
-  //    }
-
-
-
-  //    Serial.print(c);
-  //    Serial.println();
-
-
-
-//  if (reader[0] == 9) {
-//    if (!f.ARMED) f.ARMED = 1;
-//    else if (f.ARMED) f.ARMED = 0;
-//    conf.throttleIn = 1000;
-//    calibratingA=512;
-//  }
-
-
-  /***************************************CONTROL SEQUENCE******************************************/
-
-  //roll 0, pitch 1, yaw 2
-
-  /*
-    Serial.print("roll =   ");
-    Serial.print(imu.gyroADC[0]);
-    Serial.print("   ");
-    Serial.print("pitch =   ");
-    Serial.print(imu.gyroADC[1]);
-    Serial.print("   ");
-    Serial.print("yaw =   ");
-    Serial.print(imu.gyroADC[2]);
-    Serial.println("   ");
-
-
-    if(counter == 10){
-      rollZero = imu.gyroADC[0];
-      pitchZero = imu.gyroADC[1];
-      yawZero = imu.gyroADC[2];
-    } counter++;
-
-    rollErr = 0.01*(rollZero - imu.gyroADC[0]);
-    pitchErr = (pitchZero - imu.gyroADC[1]);
-
-    if(rollErr > 1999) rollErr = 1999;
-    if(rollErr < 1101) rollErr = 1101;
-
-    if(pitchErr > 1999) pitchErr = 1999;
-    if(pitchErr < 1101) pitchErr = 1101;
-
-  */
-  //Serial.print(rollZero); Serial.print("    "); Serial.print(imu.gyroADC[0]); Serial.print("    "); Serial.print(rollErr);  Serial.println();
-
-  //  conf.throttleIn = 1200;
-  //  conf.rollIn = 1200;   //1500+ right; 1500- left
-  //  conf.pitchIn  = 1200;   //1500+ forward; 1500- backward
-
-
-  //  if(reader[0]==1){
-  //if(readIn > 1000 && readIn < 2001) {
-  //    conf.throttleIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
-
-  //conf.throttleIn = readIn;
-  //inString = "";
-  //  }
-
-  //  if(reader[0]==2){
-  //    reader[0]=reader[0]-1;
-  //    conf.rollIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
-  //  }
-  //
-  //  if(reader[0]==3){
-  //    reader[0]=reader[0]-2;
-  //    conf.pitchIn = reader[0]*1000+reader[1]*100+reader[2]*10+reader[3];
-  //  }
-
-  for (int i = 0; i < 4; i++) reader[i] = 0;
+ 
 
 #if defined(SPEKTRUM)
   if (spekFrameFlags == 0x01) readSpektrum();
