@@ -10,32 +10,30 @@
 #define txrxPin 2
 #define srfAddress2 0x02
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
-#define jump 60
 #define setpoint 50
 
-int c = 999;
-int d = 0;
 int e = 2500;
 char blueval;
+int thrErr = 0;
+int thrLevel = 0;
+int dist = 0;
 
 // IR sensors
 const byte numPins = 1;
-byte digitalPin = 5;
+byte digitalPin = 12;
 
 //SoftwareSerial quadSerial(10, 11); // RX, TX
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8,7); //RX, TX
 
 void setup() {
-  pinMode(3, OUTPUT);
-  Serial.begin(9600);
+  Serial.begin(115200);
 //  while (!Serial);
 //  quadSerial.begin(9600);
   while(!Serial && !blue.available());
   UltrasonicBus.begin(9600);
   while(!Serial && !UltrasonicBus.available());
   blue.begin(9600);
-  digitalWrite(3, HIGH);
 
   // initialize timer
   timer();
@@ -43,7 +41,7 @@ void setup() {
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
   
   // set sensor pins to detect objects
-  pinMode(5, INPUT);
+  pinMode(digitalPin, INPUT);
 
   // set output pin for pulsing LED
   pinMode(LEDPIN, OUTPUT);
@@ -57,50 +55,33 @@ void setup() {
 void loop()  {
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening()) {
-    int dist = doRange(srfAddress2);
-    if (dist < setpoint) {
-      c = c + jump;
-      if (c > 2000) c = 1999;
-        Serial.print(c); //swap with below for troubleshooting
-  //    Serial.print(c);
-      delay(20);
-    }
-    else if (dist > setpoint) {
-      c = c - jump;
-      if (c < 1000) c = 1000;
-      Serial.print(c); //ditto
-  //    Serial.print(c);
-      delay(20);
-    }
+    dist = doRange(srfAddress2);
+    
+    thrErr = (setpoint - dist);
+    thrLevel = 1600 + thrErr*3;  //deviate from float value
+    if ( thrLevel > 1999 ) thrLevel = 1999;
+    if ( thrLevel < 1201 ) thrLevel = 1201;
+    Serial.print(String(thrLevel) + "z");
   }
 
   blue.listen();
   if (blue.isListening()) {
-    delay(100); //does this really need to be this long? 50 sort of works?
+    delay(50); //does this really need to be this long? 50 sort of works?
     blueval = blue.read();
     if(blueval == 'a'){
 //    Serial.print(blueval); //swap these two with below for troubleshooting
 //    digitalWrite(3, !digitalRead(3));
-      d = 9000;
-      Serial.print(d);
+      Serial.print(blueval);
       delay(20); //if we delay above, do we need delay here?
-      d = 0;
-      c = 0;
     }
   }
 
-//  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
-//    e = 2200; //set the roll to escape away from whatever it senses
-//    Serial.print(e);
-//    e = 2800; //counteract that roll to get back to stationary
-//    Serial.print(e);
-//    e = 2500; //hold stationary (MIDRC)
-//    Serial.print(e);
-//  }
-//  else {
-//    e = 2500; //if it doesn't sense something, hold stationary
-//    Serial.print(e);
-//  }
+  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
+    Serial.print("rg");  //roll go
+  }
+  else if(digitalRead(digitalPin)==HIGH) {
+    Serial.print("rs"); //roll stop
+  }
 }
 
 int doRange(byte Address) {
