@@ -58,15 +58,15 @@ void loop()  {
     dist = doRange(srfAddress2);
     
     thrErr = (setpoint - dist);
-    thrLevel = 1600 + thrErr*3;  //deviate from float value
+    thrLevel = 1600 + thrErr*10;  //deviate from float value
     if ( thrLevel > 1999 ) thrLevel = 1999;
-    if ( thrLevel < 1201 ) thrLevel = 1201;
-    Serial.print(String(thrLevel) + "z");
+    if ( thrLevel < 1401 ) thrLevel = 1401;
+    Serial.print("t" + String(thrLevel));
   }
 
   blue.listen();
   if (blue.isListening()) {
-    delay(50); //does this really need to be this long? 50 sort of works?
+    delay(100); //does this really need to be this long? 50 sort of works?
     blueval = blue.read();
     if(blueval == 'a'){
 //    Serial.print(blueval); //swap these two with below for troubleshooting

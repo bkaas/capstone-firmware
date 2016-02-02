@@ -205,20 +205,19 @@ void serialCom() {
         f.ARMED ^= 1;
         conf.throttleIn = 1000;
        }
-      if (c == '1' && f.ARMED == 1) {
-        thrLevel = (char)c;
-        while (cc-- ){
+       
+      if (c == 't' && f.ARMED == 1) {
+        for(int i = 0; i < 4; i++){
           c = SerialRead(CURRENTPORT);
-          if(c == 'z') break;
           thrLevel += (char)c;
         }
         thrVal = thrLevel.toInt();
         conf.throttleIn = thrVal;
+        thrLevel = "";
       }
       if (c == 'r' && f.ARMED == 1) {
         while (cc-- ){
           c = SerialRead(CURRENTPORT);
-//          if(c == 'z') break; //dont want to put a break because next value is a letter, for throttle, all numbers are sent and nothing determines beginning or end
           if(c == 'g') conf.rollIn = 1250;
           if(c == 's') conf.rollIn = 1500;
         }
