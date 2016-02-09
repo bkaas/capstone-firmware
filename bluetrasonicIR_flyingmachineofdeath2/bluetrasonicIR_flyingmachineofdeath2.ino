@@ -21,6 +21,9 @@ int dist = 0;
 // IR sensors
 const byte numPins = 1;
 byte digitalPin = 12;
+int sCount = 0; //stop counter
+int gCount = 0; //go counter
+int tmp;
 
 //SoftwareSerial quadSerial(10, 11); // RX, TX
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
@@ -58,9 +61,9 @@ void loop()  {
     dist = doRange(srfAddress2);
     
     thrErr = (setpoint - dist);
-    thrLevel = 1600 + thrErr*10;  //deviate from float value
+    thrLevel = 1800 + thrErr*4;  //deviate from float value
     if ( thrLevel > 1999 ) thrLevel = 1999;
-    if ( thrLevel < 1401 ) thrLevel = 1401;
+    if ( thrLevel < 1601 ) thrLevel = 1601;
     Serial.print("t" + String(thrLevel));
   }
 
@@ -78,9 +81,20 @@ void loop()  {
 
   if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
     Serial.print("rg");  //roll go
+    sCount = 0;
+    gCount++;
+    tmp = gCount;
   }
+  
   else if(digitalRead(digitalPin)==HIGH) {
-    Serial.print("rs"); //roll stop
+    if(sCount < tmp) { 
+      Serial.print("rc");
+    }
+    else {
+      Serial.print("rs"); //roll stop 
+    }
+    sCount++;
+    gCount = 0;
   }
 }
 

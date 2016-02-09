@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(10, 11); // RX, TX
+SoftwareSerial mySerial(8, 7); // RX, TX
 
 void setup() {
 
@@ -24,8 +24,21 @@ void loop()
 
   while (Serial.available()) {
     char c = Serial.read();
-    mySerial.write(c);
-    //Serial.write(c);
+    if( c == '$' ){
+      for ( int i = 0; i<100; i++){
+        mySerial.write("AT+RSSI?");
+        delay(100);
+        while (mySerial.available() > 0) {
+          Serial.write(mySerial.read());
+        }
+      Serial.println();
+      delay(100);
+      }
+    }  
+    else {
+      mySerial.write(c);
+    }
+    
   }
 
 
