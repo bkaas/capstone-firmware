@@ -5,18 +5,23 @@
 #include <avr/interrupt.h>
 #define F_CPU 16000000
 
+#define MIN(a, b) ((a < b) ? a : b)
+#define MAX(a, b) ((a > b) ? a : b) 
+
 #define timer_ticks 420 // compare value adjusted for CTC mode, 1/38000 sec = 420
 #define LEDPIN 13 //plusing LED
 #define txrxPin 2
 #define srfAddress2 0x02
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
-#define setpoint 50
+
+bool ultra = 0;
 
 int e = 2500;
 char blueval;
-int thrErr = 0;
-int thrLevel = 0;
 int dist = 0;
+int thrLevel;
+int rlLevel;
+int ptchLevel;
 
 // IR sensors
 const byte numPins = 1;
@@ -56,46 +61,84 @@ void setup() {
 }
 
 void loop()  {
+
+if( ultra ) {  
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening()) {
     dist = doRange(srfAddress2);
-    
-    thrErr = (setpoint - dist);
-    thrLevel = 1800 + thrErr*4;  //deviate from float value
-    if ( thrLevel > 1999 ) thrLevel = 1999;
-    if ( thrLevel < 1601 ) thrLevel = 1601;
-    Serial.print("t" + String(thrLevel));
+
+    thrLevel = thrPID(dist);
+    Serial.print("t" + String(thrLevel));  
   }
+}
 
   blue.listen();
   if (blue.isListening()) {
     delay(100); //does this really need to be this long? 50 sort of works?
     blueval = blue.read();
-    if(blueval == 'a'){
-//    Serial.print(blueval); //swap these two with below for troubleshooting
-//    digitalWrite(3, !digitalRead(3));
+    
+    if(blueval == 'a'){  //ARM
       Serial.print(blueval);
       delay(20); //if we delay above, do we need delay here?
     }
+    if(blueval == 'u'){  //toggle ultrasonic measurements
+      ultra ^= 1;  
+    }
+    if(blueval == 's'){  //start-up ramp
+      Serial.print(blueval);
+      delay(20);
+    }
+    if(blueval == 'c'){   //down roll midVal
+      rlLevel -= 5;
+      rlLevel = MAX(rlLevel, 1370);  //1370 trim min from multiwii
+      Serial.print("r" + String(rlLevel));
+      delay(20);
+    }
+    if(blueval == 'd'){  //up roll midVal
+      rlLevel += 5;
+      rlLevel = MIN(rlLevel, 1585);  //1585 trim min from multiwii
+      Serial.print("r" + String(rlLevel));
+      delay(20);
+    }
+    if(blueval == 'e'){  //down pitch midVal
+      ptchLevel -= 5;
+      ptchLevel = MAX(ptchLevel, 1370);
+      Serial.print("p" + String(ptchLevel));
+      delay(20);
+    }
+    if(blueval == 'f'){  //up pitch midVal
+      ptchLevel += 5;
+      ptchLevel = MIN(ptchLevel, 1585);
+      Serial.print("p" + String(ptchLevel));
+      delay(20);
+    }
+    if(blueval == '!'){  //up pitch midVal
+      blue.write(rlLevel);
+      delay(20);
+      blue.write(ptchLevel);
+      delay(20);
+    }
   }
 
-  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
-    Serial.print("rg");  //roll go
-    sCount = 0;
-    gCount++;
-    tmp = gCount;
-  }
-  
-  else if(digitalRead(digitalPin)==HIGH) {
-    if(sCount < tmp) { 
-      Serial.print("rc");
-    }
-    else {
-      Serial.print("rs"); //roll stop 
-    }
-    sCount++;
-    gCount = 0;
-  }
+  /******ROLL*******/
+//  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
+//    Serial.print("rg");  //roll go
+//    sCount = 0;
+//    gCount++;
+//    tmp = gCount;
+//  }
+//  
+//  else if(digitalRead(digitalPin)==HIGH) {
+//    if(sCount < tmp) { 
+//      Serial.print("rc");
+//    }
+//    else {
+//      Serial.print("rs"); //roll stop 
+//    }
+//    sCount++;
+//    gCount = 0;
+//  }
+
 }
 
 int doRange(byte Address) {
@@ -154,6 +197,20 @@ TIMSK1 |= (1 << OCIE1A);
 // flip LED pin HIGH/LOW
 ISR(TIMER1_COMPA_vect)
 {
-digitalWrite(LEDPIN, 1);
-digitalWrite(LEDPIN, 0);
+  digitalWrite(LEDPIN, 1);
+  digitalWrite(LEDPIN, 0);
 }
+
+int thrPID(int ultraDist) {
+  int thrErr;
+  int thrLevel;
+  int setpoint = 50;
+
+  thrErr = (setpoint - dist);
+  thrLevel = 1600 + thrErr*4;  //deviate from float value
+  thrLevel = MIN(thrLevel, 1999);
+  thrLevel = MAX(thrLevel, 1201);
+
+  return thrLevel;
+}
+

@@ -10,7 +10,12 @@
 #include "RX.h"
 
 String thrLevel;
+String rlLevel;
+String ptchLevel;
 int thrVal;
+int rlVal;
+int ptchVal;
+bool moving = 0;
 
 ///************************************** MultiWii Serial Protocol *******************************************************/
 //// Multiwii Serial Protocol 0
@@ -196,16 +201,21 @@ void serialCom() {
     #if defined(SBUS) && (UART_NUMBER > 1)
       #define SBUS_COND && (SBUS_SERIAL_PORT != CURRENTPORT)
     #endif
+    
     uint8_t cc = SerialAvailable(CURRENTPORT);
+    
     while (cc-- GPS_COND SPEK_COND SBUS_COND) {
       uint8_t bytesTXBuff = SerialUsedTXBuff(CURRENTPORT); // indicates the number of occupied bytes in TX buffer
       if (bytesTXBuff > TX_BUFFER_SIZE - 50 ) return; // ensure there is enough free TX buffer to go further (50 bytes margin)
       c = SerialRead(CURRENTPORT);
+      
+      /****ARM****/
       if(c == 'a'){
         f.ARMED ^= 1;
-        conf.throttleIn = 1000;
+        conf.throttleIn = 1100;
        }
-       
+
+      /*****THROTTLE*****/ 
       if (c == 't' && f.ARMED == 1) {
         for(int i = 0; i < 4; i++){
           c = SerialRead(CURRENTPORT);
@@ -215,12 +225,38 @@ void serialCom() {
         conf.throttleIn = thrVal;
         thrLevel = "";
       }
+
+      /******ROLL*****/
       if (c == 'r' && f.ARMED == 1) {
-        while (cc-- ){
+        for(int i = 0; i < 4; i++){
           c = SerialRead(CURRENTPORT);
-          if(c == 'g') conf.rollIn = 1250;
-          if(c == 's') conf.rollIn = 1500;
+          rlLevel += (char)c;
         }
+        rlVal = rlLevel.toInt();
+        conf.rollIn = rlVal;
+        rlLevel = "";
+//        while (cc-- ){
+//          c = SerialRead(CURRENTPORT);
+//          if(c == 'g') conf.rollIn = 1250;
+//          if(c == 's') conf.rollIn = 1500;
+//        }
+      }
+
+      /******PITCH*****/
+      if (c == 'p' && f.ARMED == 1) {
+        for(int i = 0; i < 4; i++){
+          c = SerialRead(CURRENTPORT);
+          ptchLevel += (char)c;
+        }
+        ptchVal = ptchLevel.toInt();
+        conf.pitchIn = ptchVal;
+        ptchLevel = "";
+      }
+
+      /****Trim direction test****/
+      if(c == 's' && f.ARMED == 1){
+        conf.throttleIn = (moving ? 1100 : 1500); // (condition ? true : false) if its moving (moving=1) stop throttle (true == 1, false == 0)
+        moving ^= 1;
       }
     }
         
