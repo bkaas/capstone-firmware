@@ -20,8 +20,8 @@ int e = 2500;
 char blueval;
 int dist = 0;
 int thrLevel;
-int rlLevel;
-int ptchLevel;
+int rlLevel = 1500;
+int ptchLevel = 1500;
 
 // IR sensors
 const byte numPins = 1;
@@ -82,7 +82,7 @@ if( ultra ) {
       delay(20); //if we delay above, do we need delay here?
     }
     if(blueval == 'u'){  //toggle ultrasonic measurements
-      ultra ^= 1;  
+      ultra ^= 1;
     }
     if(blueval == 's'){  //start-up ramp
       Serial.print(blueval);
@@ -112,12 +112,20 @@ if( ultra ) {
       Serial.print("p" + String(ptchLevel));
       delay(20);
     }
-    if(blueval == '!'){  //up pitch midVal
-      blue.write(rlLevel);
+    if(blueval == 'g'){  //reset roll and pitch
+      ptchLevel = 1500;
+      rlLevel = 1500;
+      Serial.print("p" + String(ptchLevel));
       delay(20);
-      blue.write(ptchLevel);
+      Serial.print("r" + String(rlLevel));
       delay(20);
     }
+//    if(blueval == '!'){  //tell us what the roll and pitch is
+//      blue.write(rlLevel);
+//      delay(20);
+//      blue.write(ptchLevel);
+//      delay(20);
+//    }
   }
 
   /******ROLL*******/
