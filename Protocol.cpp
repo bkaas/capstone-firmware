@@ -254,7 +254,7 @@ void serialCom() {
       }
 
       /****Trim direction test****/
-      if(c == 's' && f.ARMED == 1){
+      if(c == 'g' && f.ARMED == 1){
         conf.throttleIn = (moving ? 1000 : 1500); // (condition ? true : false) if its moving (moving=1) stop throttle (true == 1, false == 0)
         moving ^= 1;
       }

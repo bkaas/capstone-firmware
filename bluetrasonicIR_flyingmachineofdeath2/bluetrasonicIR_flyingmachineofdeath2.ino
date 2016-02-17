@@ -84,35 +84,35 @@ if( ultra ) {
     if(blueval == 'u'){  //toggle ultrasonic measurements
       ultra ^= 1;
     }
-    if(blueval == 's'){  //start-up ramp
+    if(blueval == 'g'){  //start-up ramp
       Serial.print(blueval);
       delay(20);
     }
-    if(blueval == 'c'){   //down roll midVal
+    if(blueval == 'w'){   //down roll midVal (west)
       rlLevel -= 5;
       rlLevel = MAX(rlLevel, 1370);  //1370 trim min from multiwii
       Serial.print("r" + String(rlLevel));
       delay(20);
     }
-    if(blueval == 'd'){  //up roll midVal
+    if(blueval == 'e'){  //up roll midVal (east)
       rlLevel += 5;
-      rlLevel = MIN(rlLevel, 1585);  //1585 trim min from multiwii
+      rlLevel = MIN(rlLevel, 1585);  //1585 trim max from multiwii
       Serial.print("r" + String(rlLevel));
       delay(20);
     }
-    if(blueval == 'e'){  //down pitch midVal
+    if(blueval == 's'){  //down pitch midVal (south)
       ptchLevel -= 5;
       ptchLevel = MAX(ptchLevel, 1370);
       Serial.print("p" + String(ptchLevel));
       delay(20);
     }
-    if(blueval == 'f'){  //up pitch midVal
+    if(blueval == 'n'){  //up pitch midVal (north)
       ptchLevel += 5;
       ptchLevel = MIN(ptchLevel, 1585);
       Serial.print("p" + String(ptchLevel));
       delay(20);
     }
-    if(blueval == 'g'){  //reset roll and pitch
+    if(blueval == 'r'){  //reset roll and pitch
       ptchLevel = 1500;
       rlLevel = 1500;
       Serial.print("p" + String(ptchLevel));
