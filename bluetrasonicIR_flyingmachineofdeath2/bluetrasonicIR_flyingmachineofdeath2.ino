@@ -11,7 +11,7 @@
 #define timer_ticks 420 // compare value adjusted for CTC mode, 1/38000 sec = 420
 #define LEDPIN 13 //plusing LED
 #define txrxPin 2
-#define srfAddress2 0x02
+#define srfAddress2 0x03
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
 
 bool ultra = 0;
@@ -22,6 +22,9 @@ int dist = 0;
 int thrLevel;
 int rlLevel = 1500;
 int ptchLevel = 1500;
+uint8_t c;
+String thr;
+
 
 // IR sensors
 const byte numPins = 1;
@@ -88,6 +91,14 @@ if( ultra ) {
       Serial.print(blueval);
       delay(20);
     }
+    if (blueval == 't') {
+        for(int i = 0; i < 4; i++){
+          c = blue.read();
+          thr += (char)c;
+        }
+        Serial.print("t" + thr);
+        thr = "";
+      }
     if(blueval == 'w'){   //down roll midVal (west)
       rlLevel -= 5;
       rlLevel = MAX(rlLevel, 1370);  //1370 trim min from multiwii
