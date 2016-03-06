@@ -318,6 +318,7 @@ ISR(PCINT0_vect) {
         rcValue[0]=conf.throttleIn; //alex
         rcValue[1]=conf.rollIn; //Dan
         rcValue[2]=conf.pitchIn; //Dan
+        rcValue[3]=conf.yawIn; //kaas
 #if defined(FAILSAFE)
         if (chan < 4 && diff > FAILSAFE_DETECT_TRESHOLD) GoodPulses |= (1 << chan); // if signal is valid - mark channel as OK
         if (GoodPulses == 0x0F) {                                            // If first four chanells have good pulses, clear FailSafe counter

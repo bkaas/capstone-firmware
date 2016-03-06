@@ -212,6 +212,7 @@ typedef struct {
   int16_t throttleIn; // Throttle input from sensing circuit, added by Dan
   int16_t rollIn; // Roll input from sensing circuit, added by Dan
   int16_t pitchIn; // Pitch input from sensing circuit, added by Dan
+  int16_t yawIn;  //kaas
   uint8_t  checksum;      // MUST BE ON LAST POSITION OF CONF STRUCTURE !
 } conf_t;
 

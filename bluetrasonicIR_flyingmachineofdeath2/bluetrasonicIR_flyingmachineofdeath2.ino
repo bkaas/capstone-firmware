@@ -22,8 +22,10 @@ int dist = 0;
 int thrLevel;
 int rlLevel = 1500;
 int ptchLevel = 1500;
+int yawLevel = 1500;
 uint8_t c;
 String thr;
+int trimStep = 2;
 
 
 // IR sensors
@@ -71,7 +73,7 @@ if( ultra ) {
     dist = doRange(srfAddress2);
 
     thrLevel = thrPID(dist);
-    Serial.print("t" + String(thrLevel));  
+    Serial.print("t" + String(thrLevel));
   }
 }
 
@@ -87,10 +89,6 @@ if( ultra ) {
     if(blueval == 'u'){  //toggle ultrasonic measurements
       ultra ^= 1;
     }
-    if(blueval == 'g'){  //start-up ramp
-      Serial.print(blueval);
-      delay(20);
-    }
     if (blueval == 't') {
         for(int i = 0; i < 4; i++){
           c = blue.read();
@@ -100,35 +98,50 @@ if( ultra ) {
         thr = "";
       }
     if(blueval == 'w'){   //down roll midVal (west)
-      rlLevel -= 5;
+      rlLevel -= trimStep;
       rlLevel = MAX(rlLevel, 1370);  //1370 trim min from multiwii
       Serial.print("r" + String(rlLevel));
       delay(20);
     }
     if(blueval == 'e'){  //up roll midVal (east)
-      rlLevel += 5;
+      rlLevel += trimStep;
       rlLevel = MIN(rlLevel, 1585);  //1585 trim max from multiwii
       Serial.print("r" + String(rlLevel));
       delay(20);
     }
     if(blueval == 's'){  //down pitch midVal (south)
-      ptchLevel -= 5;
+      ptchLevel -= trimStep;
       ptchLevel = MAX(ptchLevel, 1370);
       Serial.print("p" + String(ptchLevel));
       delay(20);
     }
     if(blueval == 'n'){  //up pitch midVal (north)
-      ptchLevel += 5;
+      ptchLevel += trimStep;
       ptchLevel = MIN(ptchLevel, 1585);
       Serial.print("p" + String(ptchLevel));
       delay(20);
     }
-    if(blueval == 'r'){  //reset roll and pitch
+    if(blueval == 'l'){  //down yaw midVal (left)
+      yawLevel -= trimStep;
+      yawLevel = MAX(yawLevel, 1370);
+      Serial.print("y" + String(yawLevel));
+      delay(20);
+    }
+    if(blueval == 'r'){  //up yaw midVal (right)
+      yawLevel += trimStep;
+      yawLevel = MIN(yawLevel, 1585);
+      Serial.print("y" + String(yawLevel));
+      delay(20);
+    }
+    if(blueval == 'z'){  //reset roll and pitch
       ptchLevel = 1500;
       rlLevel = 1500;
+      yawLevel = 1500;
       Serial.print("p" + String(ptchLevel));
       delay(20);
       Serial.print("r" + String(rlLevel));
+      delay(20);
+      Serial.print("y" + String(yawLevel));
       delay(20);
     }
 //    if(blueval == '!'){  //tell us what the roll and pitch is

@@ -12,10 +12,7 @@
 String thrLevel;
 String rlLevel;
 String ptchLevel;
-int thrVal;
-int rlVal;
-int ptchVal;
-bool moving = 0;
+String yawLevel;
 
 ///************************************** MultiWii Serial Protocol *******************************************************/
 //// Multiwii Serial Protocol 0
@@ -221,8 +218,7 @@ void serialCom() {
           c = SerialRead(CURRENTPORT);
           thrLevel += (char)c;
         }
-        thrVal = thrLevel.toInt();
-        conf.throttleIn = thrVal;
+        conf.throttleIn = thrLevel.toInt();
         thrLevel = "";
       }
 
@@ -232,8 +228,7 @@ void serialCom() {
           c = SerialRead(CURRENTPORT);
           rlLevel += (char)c;
         }
-        rlVal = rlLevel.toInt();
-        conf.rollIn = rlVal;
+        conf.rollIn = rlLevel.toInt();
         rlLevel = "";
 //        while (cc-- ){
 //          c = SerialRead(CURRENTPORT);
@@ -248,15 +243,18 @@ void serialCom() {
           c = SerialRead(CURRENTPORT);
           ptchLevel += (char)c;
         }
-        ptchVal = ptchLevel.toInt();
-        conf.pitchIn = ptchVal;
+        conf.pitchIn = ptchLevel.toInt();
         ptchLevel = "";
       }
 
-      /****Trim direction test****/
-      if(c == 'g' && f.ARMED == 1){
-        conf.throttleIn = (moving ? 1000 : 1500); // (condition ? true : false) if its moving (moving=1) stop throttle (true == 1, false == 0)
-        moving ^= 1;
+      /*******YAW*******/
+      if (c == 'y' && f.ARMED == 1) {
+        for(int i = 0; i < 4; i++){
+          c = SerialRead(CURRENTPORT);
+          ptchLevel += (char)c;
+        }
+        conf.yawIn = yawLevel.toInt();
+        yawLevel = "";
       }
     }
         
