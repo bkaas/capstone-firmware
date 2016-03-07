@@ -9,8 +9,8 @@
 #define MAX(a, b) ((a > b) ? a : b) 
 
 #define timer_ticks 420 // compare value adjusted for CTC mode, 1/38000 sec = 420
-#define LEDPIN 13 //plusing LED
-#define txrxPin 2
+#define LEDPIN 13 //pulsing LED
+#define txrxPin A0
 #define srfAddress2 0x03
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
 
@@ -19,13 +19,15 @@ bool ultra = 0;
 int e = 2500;
 char blueval;
 int dist = 0;
-int thrLevel;
+int thrLevel = 1500;
 int rlLevel = 1500;
 int ptchLevel = 1500;
 int yawLevel = 1500;
 uint8_t c;
 String thr;
+String tmpStr;
 int trimStep = 2;
+int Kp = 0.1;
 
 
 // IR sensors
@@ -40,6 +42,7 @@ SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8,7); //RX, TX
 
 void setup() {
+  
   Serial.begin(115200);
 //  while (!Serial);
 //  quadSerial.begin(9600);
@@ -67,11 +70,10 @@ void setup() {
 
 void loop()  {
 
-if( ultra ) {  
+if( ultra ) {
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening()) {
     dist = doRange(srfAddress2);
-
     thrLevel = thrPID(dist);
     Serial.print("t" + String(thrLevel));
   }
@@ -95,6 +97,7 @@ if( ultra ) {
           thr += (char)c;
         }
         Serial.print("t" + thr);
+        thrLevel = thr.toInt();
         thr = "";
       }
     if(blueval == 'w'){   //down roll midVal (west)
@@ -144,6 +147,15 @@ if( ultra ) {
       Serial.print("y" + String(yawLevel));
       delay(20);
     }
+    if (blueval == 'k') {
+        for(int i = 0; i < 4; i++){
+          c = blue.read();
+          tmpStr += (char)c;
+        }
+        Kp = tmpStr.toInt();
+        Kp = Kp/100;
+        tmpStr = "";
+     }
 //    if(blueval == '!'){  //tell us what the roll and pitch is
 //      blue.write(rlLevel);
 //      delay(20);
@@ -234,12 +246,11 @@ ISR(TIMER1_COMPA_vect)
 }
 
 int thrPID(int ultraDist) {
-  int thrErr;
-  int thrLevel;
-  int setpoint = 50;
+  int thrErr = 0;
+  int setPoint = 35;
 
-  thrErr = (setpoint - dist);
-  thrLevel = 1600 + thrErr*4;  //deviate from float value
+  thrErr = (setPoint - dist);
+  thrLevel = thrLevel + thrErr*Kp;
   thrLevel = MIN(thrLevel, 1999);
   thrLevel = MAX(thrLevel, 1201);
 
