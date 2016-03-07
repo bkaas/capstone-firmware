@@ -19,7 +19,7 @@ bool ultra = 0;
 int e = 2500;
 char blueval;
 int dist = 0;
-int thrLevel = 1500;
+float thrLevel = 1500;
 int rlLevel = 1500;
 int ptchLevel = 1500;
 int yawLevel = 1500;
@@ -27,7 +27,8 @@ uint8_t c;
 String thr;
 String tmpStr;
 int trimStep = 2;
-int Kp = 0.1;
+float Kp = 10;
+int tmpInt;
 
 
 // IR sensors
@@ -75,7 +76,8 @@ if( ultra ) {
   if (UltrasonicBus.isListening()) {
     dist = doRange(srfAddress2);
     thrLevel = thrPID(dist);
-    Serial.print("t" + String(thrLevel));
+    tmpInt = int(thrLevel);
+    Serial.print("t" + String(tmpInt));
   }
 }
 
@@ -153,7 +155,6 @@ if( ultra ) {
           tmpStr += (char)c;
         }
         Kp = tmpStr.toInt();
-        Kp = Kp/100;
         tmpStr = "";
      }
 //    if(blueval == '!'){  //tell us what the roll and pitch is
@@ -183,6 +184,18 @@ if( ultra ) {
 //    gCount = 0;
 //  }
 
+}
+
+float thrPID(int ultraDist) {
+  int thrErr = 0;
+  int setPoint = 35;
+
+  thrErr = (setPoint - ultraDist);
+  thrLevel = thrLevel + thrErr*Kp/100;
+  thrLevel = MIN(thrLevel, 1999);
+  thrLevel = MAX(thrLevel, 1201);
+
+  return thrLevel;
 }
 
 int doRange(byte Address) {
@@ -243,17 +256,5 @@ ISR(TIMER1_COMPA_vect)
 {
   digitalWrite(LEDPIN, 1);
   digitalWrite(LEDPIN, 0);
-}
-
-int thrPID(int ultraDist) {
-  int thrErr = 0;
-  int setPoint = 35;
-
-  thrErr = (setPoint - dist);
-  thrLevel = thrLevel + thrErr*Kp;
-  thrLevel = MIN(thrLevel, 1999);
-  thrLevel = MAX(thrLevel, 1201);
-
-  return thrLevel;
 }
 
