@@ -18,16 +18,17 @@ bool ultra = 0;
 
 char blueval;
 int dist = 0;
-float thrLevel = 1500;
-int rlLevel = 1480;
-int ptchLevel = 1490;
-int yawLevel = 1492;
+float thrLevel = 1201;
+int rlLevel = 1500;
+int ptchLevel = 1500;
+int yawLevel = 1500;
 uint8_t c;
 String thr;
 String tmpStr;
 int trimStep = 2;
 float Kp = 10;
 int tmpInt;
+int setPoint = 25;
 
 // IR sensors
 byte irPin1 = 10;
@@ -171,7 +172,7 @@ if( ultra ) {
         c = blue.read();
         tmpStr += (char)c;
       }
-      setpoint = tmpStr.toInt();
+      setPoint = tmpStr.toInt();
       tmpStr = "";
       break;
     }
@@ -206,7 +207,6 @@ if( ultra ) {
 
 float thrPID(int ultraDist) {
   int thrErr = 0;
-  int setPoint = 35;
 
   thrErr = (setPoint - ultraDist);
   thrLevel = thrLevel + thrErr*Kp/100;
