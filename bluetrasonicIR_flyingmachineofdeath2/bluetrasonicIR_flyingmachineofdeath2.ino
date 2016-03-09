@@ -16,13 +16,12 @@
 
 bool ultra = 0;
 
-int e = 2500;
 char blueval;
 int dist = 0;
 float thrLevel = 1500;
-int rlLevel = 1500;
-int ptchLevel = 1500;
-int yawLevel = 1500;
+int rlLevel = 1480;
+int ptchLevel = 1490;
+int yawLevel = 1492;
 uint8_t c;
 String thr;
 String tmpStr;
@@ -30,42 +29,37 @@ int trimStep = 2;
 float Kp = 10;
 int tmpInt;
 
-
 // IR sensors
-const byte numPins = 1;
-byte digitalPin = 12;
-int sCount = 0; //stop counter
-int gCount = 0; //go counter
-int tmp;
+byte irPin1 = 10;
+byte irPin2 = 11;
+byte irPin3 = 12;
+byte irPin4 = 13;
 
-//SoftwareSerial quadSerial(10, 11); // RX, TX
+// Roll and Pitch movement stuff
+//int sCount = 0; //stop counter
+//int gCount = 0; //go counter
+//int tmp;
+
+
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8,7); //RX, TX
 
 void setup() {
   
   Serial.begin(115200);
-//  while (!Serial);
-//  quadSerial.begin(9600);
   while(!Serial && !blue.available());
   UltrasonicBus.begin(9600);
   while(!Serial && !UltrasonicBus.available());
   blue.begin(9600);
-
-  // initialize timer
-  timer();
-
-  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
   
   // set sensor pins to detect objects
-  pinMode(digitalPin, INPUT);
+  pinMode(irPin1, INPUT);
+  pinMode(irPin2, INPUT);
+  pinMode(irPin3, INPUT);
+  pinMode(irPin4, INPUT);
 
   // set output pin for pulsing LED
   pinMode(LEDPIN, OUTPUT);
-
-  // enable global interrupts:
-  sei();
-  //while(1);
   
 }
 
@@ -85,60 +79,73 @@ if( ultra ) {
   if (blue.isListening()) {
     delay(100); //does this really need to be this long? 50 sort of works?
     blueval = blue.read();
+  }
+
+  switch(blueval) {
     
-    if(blueval == 'a'){  //ARM
+    case 'a': //if(blueval == 'a'){  //ARM
       Serial.print(blueval);
       delay(20); //if we delay above, do we need delay here?
-    }
-    if(blueval == 'u'){  //toggle ultrasonic measurements
+      thrLevel = 1201;
+      break;
+      
+    case 'u': //if(blueval == 'u'){  //toggle ultrasonic measurements
       ultra ^= 1;
-    }
-    if (blueval == 't') {
-        for(int i = 0; i < 4; i++){
-          c = blue.read();
-          thr += (char)c;
-        }
-        Serial.print("t" + thr);
-        thrLevel = thr.toInt();
-        thr = "";
+      break;
+      
+    case 't': //if (blueval == 't') {
+      for(int i = 0; i < 4; i++){
+        c = blue.read();
+        thr += (char)c;
       }
-    if(blueval == 'w'){   //down roll midVal (west)
+      Serial.print("t" + thr);
+      thrLevel = thr.toInt();
+      thr = "";
+      break;
+      
+    case 'w': //if(blueval == 'w'){   //down roll midVal (west)
       rlLevel -= trimStep;
       rlLevel = MAX(rlLevel, 1370);  //1370 trim min from multiwii
       Serial.print("r" + String(rlLevel));
       delay(20);
-    }
-    if(blueval == 'e'){  //up roll midVal (east)
+      break;
+      
+    case 'e': //if(blueval == 'e'){  //up roll midVal (east)
       rlLevel += trimStep;
       rlLevel = MIN(rlLevel, 1585);  //1585 trim max from multiwii
       Serial.print("r" + String(rlLevel));
       delay(20);
-    }
-    if(blueval == 's'){  //down pitch midVal (south)
+      break;
+      
+    case 's': //if(blueval == 's'){  //down pitch midVal (south)
       ptchLevel -= trimStep;
       ptchLevel = MAX(ptchLevel, 1370);
       Serial.print("p" + String(ptchLevel));
       delay(20);
-    }
-    if(blueval == 'n'){  //up pitch midVal (north)
+      break;
+      
+    case 'n': //if(blueval == 'n'){  //up pitch midVal (north)
       ptchLevel += trimStep;
       ptchLevel = MIN(ptchLevel, 1585);
       Serial.print("p" + String(ptchLevel));
       delay(20);
-    }
-    if(blueval == 'l'){  //down yaw midVal (left)
+      break;
+      
+    case 'l': //if(blueval == 'l'){  //down yaw midVal (left)
       yawLevel -= trimStep;
       yawLevel = MAX(yawLevel, 1370);
       Serial.print("y" + String(yawLevel));
       delay(20);
-    }
-    if(blueval == 'r'){  //up yaw midVal (right)
+      break;
+      
+    case 'r': //if(blueval == 'r'){  //up yaw midVal (right)
       yawLevel += trimStep;
       yawLevel = MIN(yawLevel, 1585);
       Serial.print("y" + String(yawLevel));
       delay(20);
-    }
-    if(blueval == 'z'){  //reset roll and pitch
+      break;
+      
+    case 'z': //if(blueval == 'z'){  //reset roll and pitch
       ptchLevel = 1500;
       rlLevel = 1500;
       yawLevel = 1500;
@@ -148,22 +155,33 @@ if( ultra ) {
       delay(20);
       Serial.print("y" + String(yawLevel));
       delay(20);
+      break;
+      
+    case 'k': //if (blueval == 'k') {
+      for(int i = 0; i < 4; i++){
+        c = blue.read();
+        tmpStr += (char)c;
+      }
+      Kp = tmpStr.toInt();
+      tmpStr = "";
+      break;
+
+    case 'h': //height, changes setpoint
+      for(int i = 0; i < 3; i++){
+        c = blue.read();
+        tmpStr += (char)c;
+      }
+      setpoint = tmpStr.toInt();
+      tmpStr = "";
+      break;
     }
-    if (blueval == 'k') {
-        for(int i = 0; i < 4; i++){
-          c = blue.read();
-          tmpStr += (char)c;
-        }
-        Kp = tmpStr.toInt();
-        tmpStr = "";
-     }
-//    if(blueval == '!'){  //tell us what the roll and pitch is
-//      blue.write(rlLevel);
-//      delay(20);
-//      blue.write(ptchLevel);
-//      delay(20);
-//    }
-  }
+  //    if(blueval == '!'){  //tell us what the roll and pitch is
+  //      blue.write(rlLevel);
+  //      delay(20);
+  //      blue.write(ptchLevel);
+  //      delay(20);
+  //    }
+    
 
   /******ROLL*******/
 //  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
@@ -183,7 +201,7 @@ if( ultra ) {
 //    sCount++;
 //    gCount = 0;
 //  }
-
+    
 }
 
 float thrPID(int ultraDist) {
@@ -221,40 +239,3 @@ void SRF01_Cmd(byte Address, byte cmd) {                     // Function to send
     byte junk = UltrasonicBus.read();
   }
 }
-
-void timer()
-{
-// initialize Timer1
-cli();          // disable global interrupts
-TCCR1A = 0;     // set entire TCCR1A register to 0
-TCCR1B = 0;     // same for TCCR1B
-
-// set compare match register to desired timer count:
-OCR1A = timer_ticks;
-//OCR1AH = (timer_ticks >> 8);
-//OCR1AL = (timer_ticks & 0x00FF);
-
-// turn on CTC mode:
-TCCR1B |= (1 << WGM12);
-
-// Set CS10 bit for no prescaler:
-TCCR1B |= (1 << CS10);
-
-// On reset, cleared to 0
-TCCR1C = 0;
-
-// TCNT1 set timer counter initial value, clear to 0
-TCNT1 = 0;
-
-// enable timer compare interrupt:
-TIMSK1 |= (1 << OCIE1A);
-
-}
-
-// flip LED pin HIGH/LOW
-ISR(TIMER1_COMPA_vect)
-{
-  digitalWrite(LEDPIN, 1);
-  digitalWrite(LEDPIN, 0);
-}
-
