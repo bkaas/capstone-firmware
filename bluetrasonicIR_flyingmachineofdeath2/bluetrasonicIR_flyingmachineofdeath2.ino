@@ -26,9 +26,10 @@ uint8_t c;
 String thr;
 String tmpStr;
 int trimStep = 2;
-float Kp = 10;
+float Kp = 300.0;
 int tmpInt;
-int setPoint = 25;
+int setPoint = 40;
+int ultraMin = 1750;
 
 // IR sensors
 byte irPin1 = 10;
@@ -175,6 +176,15 @@ if( ultra ) {
       setPoint = tmpStr.toInt();
       tmpStr = "";
       break;
+
+    case 'm': //minimum ultra val
+      for(int i = 0; i < 4; i++){
+        c = blue.read();
+        tmpStr += (char)c;
+      }
+      ultraMin = tmpStr.toInt();
+      tmpStr = "";
+      break;
     }
   //    if(blueval == '!'){  //tell us what the roll and pitch is
   //      blue.write(rlLevel);
@@ -206,12 +216,12 @@ if( ultra ) {
 }
 
 float thrPID(int ultraDist) {
-  int thrErr = 0;
+  float thrErr = 0;
 
   thrErr = (setPoint - ultraDist);
-  thrLevel = thrLevel + thrErr*Kp/100;
+  thrLevel = thrLevel + thrErr*Kp/100.0;
   thrLevel = MIN(thrLevel, 1999);
-  thrLevel = MAX(thrLevel, 1201);
+  thrLevel = MAX(thrLevel, ultraMin);
 
   return thrLevel;
 }
