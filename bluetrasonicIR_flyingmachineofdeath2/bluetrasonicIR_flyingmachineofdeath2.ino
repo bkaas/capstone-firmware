@@ -6,14 +6,13 @@
 #define F_CPU 16000000
 
 #define MIN(a, b) ((a < b) ? a : b)
-#define MAX(a, b) ((a > b) ? a : b)
+#define MAX(a, b) ((a > b) ? a : b) 
 
 #define timer_ticks 420 // compare value adjusted for CTC mode, 1/38000 sec = 420
 #define LEDPIN 13 //pulsing LED
 #define txrxPin A0
 #define srfAddress2 0x03
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
-#define ULTRA_SIZE 20
 
 bool ultra = 0;
 
@@ -27,22 +26,16 @@ uint8_t c;
 String thr;
 String tmpStr;
 int trimStep = 2;
-float Kp = 200.0;
-float Ki = 1.0;
-float Kd = 80.0;
+float Kp = 300.0;
 int tmpInt;
 int setPoint = 40;
-int ultraMin = 1800;
+int ultraMin = 1750;
 
 // IR sensors
 byte irPin1 = 10;
 byte irPin2 = 11;
 byte irPin3 = 12;
 byte irPin4 = 13;
-
-int32_t ultraSum;
-int8_t ultraDiff;
-float thrErr = 0;
 
 // Roll and Pitch movement stuff
 //int sCount = 0; //stop counter
@@ -77,8 +70,9 @@ void loop()  {
 if( ultra ) {
   UltrasonicBus.listen();
   if (UltrasonicBus.isListening()) {
-    ultraHist();
-    tmpInt = int(thrPID());
+    dist = doRange(srfAddress2);
+    thrLevel = thrPID(dist);
+    tmpInt = int(thrLevel);
     Serial.print("t" + String(tmpInt));
   }
 }
@@ -221,38 +215,15 @@ if( ultra ) {
     
 }
 
-float thrPID() {
-  //float thrErr = 0;
+float thrPID(int ultraDist) {
+  float thrErr = 0;
 
-  //thrErr = (setPoint - ultraDist);
-  thrLevel = thrLevel + thrErr*Kp/100.0 + ultraSum*Ki/100.0 + ultraDiff*Kd/100.0;
+  thrErr = (setPoint - ultraDist);
+  thrLevel = thrLevel + thrErr*Kp/100.0;
   thrLevel = MIN(thrLevel, 1999);
   thrLevel = MAX(thrLevel, ultraMin);
 
   return thrLevel;
-}
-
-void ultraHist() {
-  static float ultraHistTable[ULTRA_SIZE];
-  static uint8_t ultraHistIndex;
-  static uint8_t prevIndex;
-
-  uint8_t indexPlus1 = (ultraHistIndex + 1);
-  if (indexPlus1 == ULTRA_SIZE) indexPlus1 = 0;
-
-  //Proportional Error
-  ultraHistTable[ultraHistIndex] = setPoint - doRange(srfAddress2);
-  thrErr = ultraHistTable[ultraHistIndex];
-
-  //Integral Error
-  ultraSum += ultraHistTable[ultraHistIndex];
-  ultraSum -= ultraHistTable[indexPlus1];
-
-  //Difference Error
-  prevIndex = ultraHistIndex ? ultraHistIndex - 1 : ULTRA_SIZE-1;
-  ultraDiff = ultraHistTable[ultraHistIndex] - ultraHistTable[prevIndex];
-  
-  ultraHistIndex = indexPlus1;
 }
 
 int doRange(byte Address) {
