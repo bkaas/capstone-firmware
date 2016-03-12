@@ -1010,7 +1010,7 @@ void loop () {
       }
     } else {
       // failsafe support
-      f.ANGLE_MODE = 0;
+      f.ANGLE_MODE = 1;
     }
     if ( rcOptions[BOXHORIZON] ) {
       f.ANGLE_MODE = 0;
