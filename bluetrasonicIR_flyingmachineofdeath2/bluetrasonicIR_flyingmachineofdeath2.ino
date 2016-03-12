@@ -183,6 +183,7 @@ void loop()  {
         tmpStr += (char)c;
       }
       p = double(tmpStr.toInt());
+      p = p/100.0;
       tmpStr = "";
       break;
 
@@ -192,6 +193,7 @@ void loop()  {
         tmpStr += (char)c;
       }
       i = double(tmpStr.toInt());
+      i = i/100.0;
       tmpStr = "";
       break;
       
@@ -201,6 +203,7 @@ void loop()  {
         tmpStr += (char)c;
       }
       d = double(tmpStr.toInt());
+      d = d/100.0;
       tmpStr = "";
       break;
     case 'h': //height, changes setpoint
