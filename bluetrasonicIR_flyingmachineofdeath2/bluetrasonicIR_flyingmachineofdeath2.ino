@@ -1,4 +1,3 @@
-
 #include <PID_v1.h>
 #include <SoftwareSerial.h>
 
@@ -10,8 +9,6 @@
 #define MIN(a, b) ((a < b) ? a : b)
 #define MAX(a, b) ((a > b) ? a : b)
 
-#define timer_ticks 420 // compare value adjusted for CTC mode, 1/38000 sec = 420
-#define LEDPIN 13 //pulsing LED
 #define txrxPin A0
 #define srfAddress2 0x01
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
@@ -27,34 +24,34 @@ PID myPID(&dist, &Output, &setPoint, p, i, d, DIRECT);
 //
 
 
-
-bool ultra = 0;
-
 char blueval;
+bool ultra = 0;
+bool infrared = 0;
 
 float thrLevel = 1201;
-int rlLevel = 1500;
-int ptchLevel = 1500;
-int yawLevel = 1500;
+int rlMid = 1500; int ptchMid = 1500; int yawMid = 1500;
+int trimStep = 2;
+int ptchLevel; int rlLevel;
+
 uint8_t c;
 String thr;
 String tmpStr;
-int trimStep = 2;
-float Kp = 300.0;
 int tmpInt;
 
-int ultraMin = 1750;
-
 // IR sensors
-byte irPin1 = 10;
-byte irPin2 = 11;
-byte irPin3 = 12;
-byte irPin4 = 13;
+byte irPinN = 11;
+byte irPinE = 12;
+byte irPinS = A5;
+byte irPinW = 9;
+byte enablePin = 13;
 
 // Roll and Pitch movement stuff
-//int sCount = 0; //stop counter
-//int gCount = 0; //go counter
-//int tmp;
+int adjustment = 5;
+bool state[4];  //north, east, south, west in that order
+int count[4] = {0,0,0,0};
+int comp[4] = {0,0,0,0};
+int countPrev[4];
+int tmpDir[4];
 
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
@@ -72,18 +69,17 @@ void setup() {
   blue.begin(9600);
 
   // set sensor pins to detect objects
-  pinMode(irPin1, INPUT);
-  pinMode(irPin2, INPUT);
-  pinMode(irPin3, INPUT);
-  pinMode(irPin4, INPUT);
+  pinMode(irPinN, INPUT);
+  pinMode(irPinE, INPUT);
+  pinMode(irPinS, INPUT);
+  pinMode(irPinW, INPUT);
 
-  // set output pin for pulsing LED
-  pinMode(LEDPIN, OUTPUT);
+  pinMode(enablePin, OUTPUT);
 
 }
 
 void loop()  {
-
+  
   if ( ultra ) {
     UltrasonicBus.listen();
     if (UltrasonicBus.isListening()) {
@@ -93,6 +89,33 @@ void loop()  {
       tmpInt = int(thrLevel);
       Serial.print("t" + String(tmpInt));
     }
+  }
+
+  if ( infrared ) {
+    
+    state[0] = digitalRead(irPinN);
+    state[1] = digitalRead(irPinE);
+    state[2] = digitalRead(irPinS);
+    state[3] = digitalRead(irPinW);
+
+    for(int i = 0; i < 4; i++){ 
+      countPrev[i] = count[i];
+      count[i] = !state[i]*(count[i] + 1);
+      if ((count[i] - countPrev[i]) < 0) tmpDir[i] = countPrev[i];
+      if ( comp[i] < tmpDir[i] ) {
+        comp[i] += 1;
+      }
+      else {
+        comp[i] = 0;
+        tmpDir[i] = 0;
+      }
+    }
+
+    ptchLevel = ptchMid + ( count[0] - count[2] - (comp[0] - comp[2]) )*adjustment;
+    rlLevel = rlMid + ( count[1] - count[3] - (comp[1] - comp[3]) )*adjustment;
+
+    Serial.print("p" + String(ptchLevel));
+    Serial.print("r" + String(rlLevel));
   }
 
   blue.listen();
@@ -113,6 +136,11 @@ void loop()  {
       ultra ^= 1;
       break;
 
+    case 'f':
+      infrared ^= 1;
+      digitalWrite(enablePin, infrared);
+      break;
+
     case 't': //if (blueval == 't') {
       for (int i = 0; i < 4; i++) {
         c = blue.read();
@@ -124,56 +152,56 @@ void loop()  {
       break;
 
     case 'w': //if(blueval == 'w'){   //down roll midVal (west)
-      rlLevel -= trimStep;
-      rlLevel = MAX(rlLevel, 1370);  //1370 trim min from multiwii
-      Serial.print("r" + String(rlLevel));
+      rlMid -= trimStep;
+      rlMid = MAX(rlMid, 1370);  //1370 trim min from multiwii
+      Serial.print("r" + String(rlMid));
       delay(20);
       break;
 
     case 'e': //if(blueval == 'e'){  //up roll midVal (east)
-      rlLevel += trimStep;
-      rlLevel = MIN(rlLevel, 1585);  //1585 trim max from multiwii
-      Serial.print("r" + String(rlLevel));
+      rlMid += trimStep;
+      rlMid = MIN(rlMid, 1585);  //1585 trim max from multiwii
+      Serial.print("r" + String(rlMid));
       delay(20);
       break;
 
     case 's': //if(blueval == 's'){  //down pitch midVal (south)
-      ptchLevel -= trimStep;
-      ptchLevel = MAX(ptchLevel, 1370);
-      Serial.print("p" + String(ptchLevel));
+      ptchMid -= trimStep;
+      ptchMid = MAX(ptchMid, 1370);
+      Serial.print("p" + String(ptchMid));
       delay(20);
       break;
 
     case 'n': //if(blueval == 'n'){  //up pitch midVal (north)
-      ptchLevel += trimStep;
-      ptchLevel = MIN(ptchLevel, 1585);
-      Serial.print("p" + String(ptchLevel));
+      ptchMid += trimStep;
+      ptchMid = MIN(ptchMid, 1585);
+      Serial.print("p" + String(ptchMid));
       delay(20);
       break;
 
     case 'l': //if(blueval == 'l'){  //down yaw midVal (left)
-      yawLevel -= trimStep;
-      yawLevel = MAX(yawLevel, 1370);
-      Serial.print("y" + String(yawLevel));
+      yawMid -= trimStep;
+      yawMid = MAX(yawMid, 1370);
+      Serial.print("y" + String(yawMid));
       delay(20);
       break;
 
     case 'r': //if(blueval == 'r'){  //up yaw midVal (right)
-      yawLevel += trimStep;
-      yawLevel = MIN(yawLevel, 1585);
-      Serial.print("y" + String(yawLevel));
+      yawMid += trimStep;
+      yawMid = MIN(yawMid, 1585);
+      Serial.print("y" + String(yawMid));
       delay(20);
       break;
 
     case 'z': //if(blueval == 'z'){  //reset roll and pitch
-      ptchLevel = 1500;
-      rlLevel = 1500;
-      yawLevel = 1500;
-      Serial.print("p" + String(ptchLevel));
+      ptchMid = 1500;
+      rlMid = 1500;
+      yawMid = 1500;
+      Serial.print("p" + String(ptchMid));
       delay(20);
-      Serial.print("r" + String(rlLevel));
+      Serial.print("r" + String(rlMid));
       delay(20);
-      Serial.print("y" + String(yawLevel));
+      Serial.print("y" + String(yawMid));
       delay(20);
       break;
 
@@ -206,6 +234,7 @@ void loop()  {
       d = d/100.0;
       tmpStr = "";
       break;
+      
     case 'h': //height, changes setpoint
       for (int i = 0; i < 3; i++) {
         c = blue.read();
@@ -213,37 +242,10 @@ void loop()  {
       }
       setPoint = tmpStr.toInt();
       tmpStr = "";
-      break;
+      break;  
 
-    
   }
-  //    if(blueval == '!'){  //tell us what the roll and pitch is
-  //      blue.write(rlLevel);
-  //      delay(20);
-  //      blue.write(ptchLevel);
-  //      delay(20);
-  //    }
-
-
-  /******ROLL*******/
-  //  if (digitalRead(digitalPin)==LOW){ //IR sensor sees something
-  //    Serial.print("rg");  //roll go
-  //    sCount = 0;
-  //    gCount++;
-  //    tmp = gCount;
-  //  }
-  //
-  //  else if(digitalRead(digitalPin)==HIGH) {
-  //    if(sCount < tmp) {
-  //      Serial.print("rc");
-  //    }
-  //    else {
-  //      Serial.print("rs"); //roll stop
-  //    }
-  //    sCount++;
-  //    gCount = 0;
-  //  }
-
+  
 }
 
 float thrPID(int ultraDist) {
@@ -251,13 +253,6 @@ float thrPID(int ultraDist) {
   //myPID.SetTunings(3, 5, 2);
   myPID.Compute();
   thrLevel = 1800+0.784*Output;
-  
-  
-  //thrErr = (setPoint - ultraDist);
-  //thrLevel = thrLevel + thrErr * Kp / 100.0;
-  
-  //thrLevel = MIN(thrLevel, 1999);
-  //thrLevel = MAX(thrLevel, ultraMin);
 
   return thrLevel;
 }
