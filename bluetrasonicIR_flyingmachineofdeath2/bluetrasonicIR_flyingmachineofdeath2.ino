@@ -18,7 +18,7 @@
 double Input, Output;
 double dist = 0;
 double setPoint;
-double p = 4.5, i=0, d=0;
+double p = 4.5, i = 0, d = 0;
 //Specify the links and initial tuning parameters
 PID myPID(&dist, &Output, &setPoint, p, i, d, DIRECT);
 //
@@ -30,6 +30,7 @@ bool infrared = 0;
 
 float thrLevel = 1201;
 int rlMid = 1500; int ptchMid = 1500; int yawMid = 1500;
+int minThrottle = 1800;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
 
@@ -48,8 +49,8 @@ byte enablePin = 13;
 // Roll and Pitch movement stuff
 int adjustment = 5;
 bool state[4];  //north, east, south, west in that order
-int count[4] = {0,0,0,0};
-int comp[4] = {0,0,0,0};
+int count[4] = {0, 0, 0, 0};
+int comp[4] = {0, 0, 0, 0};
 int countPrev[4];
 int tmpDir[4];
 
@@ -58,10 +59,10 @@ SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8, 7); //RX, TX
 
 void setup() {
-  
+
   setPoint = 40;
   myPID.SetMode(AUTOMATIC);
-  
+
   Serial.begin(115200);
   while (!Serial && !blue.available());
   UltrasonicBus.begin(9600);
@@ -79,28 +80,28 @@ void setup() {
 }
 
 void loop()  {
-  
+
   if ( ultra ) {
     UltrasonicBus.listen();
     if (UltrasonicBus.isListening()) {
+
       dist = doRange(srfAddress2);
       thrLevel = thrPID(dist);
-
       tmpInt = int(thrLevel);
       Serial.print("t" + String(tmpInt));
     }
   }
 
   if ( infrared ) {
-    
+
     state[0] = digitalRead(irPinN);
     state[1] = digitalRead(irPinE);
     state[2] = digitalRead(irPinS);
     state[3] = digitalRead(irPinW);
 
-    for(int i = 0; i < 4; i++){ 
+    for (int i = 0; i < 4; i++) {
       countPrev[i] = count[i];
-      count[i] = !state[i]*(count[i] + 1);
+      count[i] = !state[i] * (count[i] + 1);
       if ((count[i] - countPrev[i]) < 0) tmpDir[i] = countPrev[i];
       if ( comp[i] < tmpDir[i] ) {
         comp[i] += 1;
@@ -111,11 +112,11 @@ void loop()  {
       }
     }
 
-    ptchLevel = ptchMid + ( count[0] - count[2] - (comp[0] - comp[2]) )*adjustment;
-    rlLevel = rlMid + ( count[1] - count[3] - (comp[1] - comp[3]) )*adjustment;
+    ptchLevel = ptchMid + ( count[0] - count[2] - (comp[0] - comp[2]) ) * adjustment;
+    rlLevel = rlMid + ( count[1] - count[3] - (comp[1] - comp[3]) ) * adjustment;
 
-    Serial.print("p" + String(ptchLevel));
-    Serial.print("r" + String(rlLevel));
+    // Serial.print("p" + String(ptchLevel));
+    // Serial.print("r" + String(rlLevel));
   }
 
   blue.listen();
@@ -211,7 +212,7 @@ void loop()  {
         tmpStr += (char)c;
       }
       p = double(tmpStr.toInt());
-      p = p/100.0;
+      p = p / 100.0;
       tmpStr = "";
       break;
 
@@ -221,20 +222,20 @@ void loop()  {
         tmpStr += (char)c;
       }
       i = double(tmpStr.toInt());
-      i = i/100.0;
+      i = i / 100.0;
       tmpStr = "";
       break;
-      
-      case 'd': //if (blueval == 'k') {
+
+    case 'd': //if (blueval == 'k') {
       for (int i = 0; i < 4; i++) {
         c = blue.read();
         tmpStr += (char)c;
       }
       d = double(tmpStr.toInt());
-      d = d/100.0;
+      d = d / 100.0;
       tmpStr = "";
       break;
-      
+
     case 'h': //height, changes setpoint
       for (int i = 0; i < 4; i++) {
         c = blue.read();
@@ -242,25 +243,39 @@ void loop()  {
       }
       setPoint = tmpStr.toInt();
       tmpStr = "";
-      break;  
+      break;
 
     case 'j': //(ad)justment
-       for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < 4; i++) {
         c = blue.read();
         tmpStr += (char)c;
       }
       adjustment = tmpStr.toInt();
       tmpStr = "";
       break;
-  }
+
+    case 'm': //minimum throttle
+      for (int i = 0; i < 4; i++) {
+        c = blue.read();
+        tmpStr += (char)c;
+      }
+      minThrottle = tmpStr.toInt();
+      tmpStr = "";
+      break;
   
+    case 'q': //EEPROM Clear
+      Serial.print(blueval);
+      delay(20); //if we delay above, do we need delay here?
+      break;
+  }
 }
 
 float thrPID(int ultraDist) {
   float thrErr = 0;
   //myPID.SetTunings(3, 5, 2);
   myPID.Compute();
-  thrLevel = 1800+0.784*Output;
+  //thrLevel = 1800+0.784*Output;
+  thrLevel = minThrottle + map(Output, 0, 255, 0, 2050 - minThrottle);
 
   return thrLevel;
 }
