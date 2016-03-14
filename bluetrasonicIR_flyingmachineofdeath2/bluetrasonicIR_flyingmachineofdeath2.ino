@@ -30,7 +30,7 @@ bool infrared = 0;
 
 float thrLevel = 1201;
 int rlMid = 1500; int ptchMid = 1500; int yawMid = 1500;
-int minThrottle = 1700;
+int minThrottle = 1650;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
 
