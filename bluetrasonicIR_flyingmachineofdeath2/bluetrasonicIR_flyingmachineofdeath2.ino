@@ -18,7 +18,7 @@
 double Input, Output;
 double dist = 0;
 double setPoint;
-double p = 3, i=5, d=1;
+double p = 4.5, i=0, d=0;
 //Specify the links and initial tuning parameters
 PID myPID(&dist, &Output, &setPoint, p, i, d, DIRECT);
 //
@@ -236,7 +236,7 @@ void loop()  {
       break;
       
     case 'h': //height, changes setpoint
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 4; i++) {
         c = blue.read();
         tmpStr += (char)c;
       }
@@ -244,6 +244,14 @@ void loop()  {
       tmpStr = "";
       break;  
 
+    case 'j': //(ad)justment
+       for (int i = 0; i < 4; i++) {
+        c = blue.read();
+        tmpStr += (char)c;
+      }
+      adjustment = tmpStr.toInt();
+      tmpStr = "";
+      break;
   }
   
 }
