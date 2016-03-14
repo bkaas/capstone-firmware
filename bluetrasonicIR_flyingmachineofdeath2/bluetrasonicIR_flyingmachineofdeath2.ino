@@ -18,7 +18,7 @@
 double Input, Output;
 double dist = 0;
 double setPoint;
-double p = 4.5, i = 0, d = 0;
+double p = 4.0, i = 0.5, d = 0.0;
 //Specify the links and initial tuning parameters
 PID myPID(&dist, &Output, &setPoint, p, i, d, DIRECT);
 //
@@ -30,7 +30,7 @@ bool infrared = 0;
 
 float thrLevel = 1201;
 int rlMid = 1500; int ptchMid = 1500; int yawMid = 1500;
-int minThrottle = 1800;
+int minThrottle = 1700;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
 
@@ -47,7 +47,7 @@ byte irPinW = 9;
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
-int adjustment = 5;
+int adjustment = 3;
 bool state[4];  //north, east, south, west in that order
 int count[4] = {0, 0, 0, 0};
 int comp[4] = {0, 0, 0, 0};
@@ -60,7 +60,7 @@ SoftwareSerial blue(8, 7); //RX, TX
 
 void setup() {
 
-  setPoint = 40;
+  setPoint = 25;
   myPID.SetMode(AUTOMATIC);
 
   Serial.begin(115200);
@@ -272,7 +272,6 @@ void loop()  {
 
 float thrPID(int ultraDist) {
   float thrErr = 0;
-  //myPID.SetTunings(3, 5, 2);
   myPID.Compute();
   //thrLevel = 1800+0.784*Output;
   thrLevel = minThrottle + map(Output, 0, 255, 0, 2050 - minThrottle);

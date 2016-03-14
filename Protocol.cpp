@@ -207,61 +207,68 @@ void serialCom() {
       if (bytesTXBuff > TX_BUFFER_SIZE - 50 ) return; // ensure there is enough free TX buffer to go further (50 bytes margin)
       c = SerialRead(CURRENTPORT);
 
-      /****ARM****/
-      if (c == 'a') {
-        f.ARMED ^= 1;
-        conf.throttleIn = 1100;
-      }
-
-      if (c == 'q') {
-        for (int i = 0 ; i < EEPROM.length() ; i++) {
-          EEPROM.write(i, 0);
-        }
-      }
-
-      /*****THROTTLE*****/
-      if (c == 't' && f.ARMED == 1) {
-        for (int i = 0; i < 4; i++) {
-          c = SerialRead(CURRENTPORT);
-          thrLevel += (char)c;
-        }
-        conf.throttleIn = thrLevel.toInt();
-        thrLevel = "";
-      }
-
-      /******ROLL*****/
-      if (c == 'r' && f.ARMED == 1) {
-        for (int i = 0; i < 4; i++) {
-          c = SerialRead(CURRENTPORT);
-          rlLevel += (char)c;
-        }
-        conf.rollIn = rlLevel.toInt();
-        rlLevel = "";
-        //        while (cc-- ){
-        //          c = SerialRead(CURRENTPORT);
-        //          if(c == 'g') conf.rollIn = 1250;
-        //          if(c == 's') conf.rollIn = 1500;
-        //        }
-      }
-
-      /******PITCH*****/
-      if (c == 'p' && f.ARMED == 1) {
-        for (int i = 0; i < 4; i++) {
-          c = SerialRead(CURRENTPORT);
-          ptchLevel += (char)c;
-        }
-        conf.pitchIn = ptchLevel.toInt();
-        ptchLevel = "";
-      }
-
-      /*******YAW*******/
-      if (c == 'y' && f.ARMED == 1) {
-        for (int i = 0; i < 4; i++) {
-          c = SerialRead(CURRENTPORT);
-          ptchLevel += (char)c;
-        }
-        conf.yawIn = yawLevel.toInt();
-        yawLevel = "";
+      switch (c) {
+        
+        /****ARM****/
+        case 'a':
+          f.ARMED ^= 1;
+          conf.throttleIn = 1100;
+          break;
+  
+        case 'q':
+          for (int i = 0 ; i < EEPROM.length() ; i++) {
+            EEPROM.write(i, 0);
+          }
+          break;
+  
+        /*****THROTTLE*****/
+        case 't':
+          if(f.ARMED == 1) {
+            for (int i = 0; i < 4; i++) {
+              c = SerialRead(CURRENTPORT);
+              thrLevel += (char)c;
+            }
+            conf.throttleIn = thrLevel.toInt();
+            thrLevel = "";
+          }
+          break;
+  
+        /******ROLL*****/
+        case 'r':
+          if (f.ARMED == 1) {
+            for (int i = 0; i < 4; i++) {
+              c = SerialRead(CURRENTPORT);
+              rlLevel += (char)c;
+            }
+            conf.rollIn = rlLevel.toInt();
+            rlLevel = "";
+          }
+          break;
+  
+        /******PITCH*****/
+        case 'p': 
+          if (f.ARMED == 1) {
+            for (int i = 0; i < 4; i++) {
+              c = SerialRead(CURRENTPORT);
+              ptchLevel += (char)c;
+            }
+            conf.pitchIn = ptchLevel.toInt();
+            ptchLevel = "";
+          }
+          break;
+  
+        /*******YAW*******/
+        case 'y':
+          if (f.ARMED == 1) {
+            for (int i = 0; i < 4; i++) {
+              c = SerialRead(CURRENTPORT);
+              ptchLevel += (char)c;
+            }
+            conf.yawIn = yawLevel.toInt();
+            yawLevel = "";
+          }
+          break;
+        
       }
     }
 
