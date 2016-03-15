@@ -18,7 +18,13 @@
 double Input, Output;
 double dist = 0;
 double setPoint;
-double p = 4.0, i = 0.5, d = 0.0;
+//Below setpoint constants:
+double p = .5, i = 0.05, d = 2.0;
+
+//Above setpoint constants:
+double pa = 0.2*p, ia = i, da = d;
+
+
 //Specify the links and initial tuning parameters
 PID myPID(&dist, &Output, &setPoint, p, i, d, DIRECT);
 //
@@ -47,7 +53,7 @@ byte irPinW = A5;
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
-int adjustment = 3;
+int adjustment = 1;
 bool state[4];  //north, east, south, west in that order
 int count[4] = {0, 0, 0, 0};
 int comp[4] = {0, 0, 0, 0};
@@ -61,7 +67,7 @@ SoftwareSerial blue(8, 7); //RX, TX
 
 void setup() {
 
-  setPoint = 25;
+  setPoint = 100;
   myPID.SetMode(AUTOMATIC);
 
   Serial.begin(115200);
@@ -107,8 +113,8 @@ void loop()  {
       count[i] = !state[i] * (count[i] + 1);
       count[i+2] = !state[i+2] * (count[i+2] + 1);
 
-      tmpDir[i] = count[i] - countPrev[i] < 0 ? countPrev[i] : 0;
-      tmpDir[i+2] = count[i+2] - countPrev[i+2] < 0 ? countPrev[i+2] : 0;
+      tmpDir[i] = count[i] - countPrev[i] < 0 ? countPrev[i] : tmpDir[i];
+      tmpDir[i+2] = count[i+2] - countPrev[i+2] < 0 ? countPrev[i+2] : tmpDir[i+2];
       
       comp[i] = comp[i] < tmpDir[i] ? comp[i] + 1 : 0;
       comp[i+2] = comp[i+2] < tmpDir[i+2] ? comp[i+2] + 1 : 0;
@@ -116,14 +122,14 @@ void loop()  {
       tmpDir[i] = (bool)comp[i]*tmpDir[i];
       tmpDir[i+2] = (bool)comp[i+2]*tmpDir[i+2];
 
-      Serial.print(dir[i] + String(midVal[i] + ( count[i] - count[i+2] - (comp[i] - comp[i+2]) ) * adjustment));
+      Serial.print(dir[i] + String(midVal[i] + ( - count[i] + count[i+2] + (comp[i] - comp[i+2]) ) * adjustment));
 
     }
   }
 
   blue.listen();
   if (blue.isListening()) {
-    delay(100); //does this really need to be this long? 50 sort of works?
+    delay(30); //does this really need to be this long? 50 sort of works?
     blueval = blue.read();
   }
 
@@ -131,7 +137,7 @@ void loop()  {
 
     case 'a': //if(blueval == 'a'){  //ARM
       Serial.print(blueval);
-      delay(20); //if we delay above, do we need delay here?
+      //delay(20); //if we delay above, do we need delay here?
       thrLevel = 1201;
       break;
 
@@ -277,6 +283,14 @@ void loop()  {
 
 float thrPID() {
   float thrErr = 0;
+
+  /*if(dist<setPoint){
+    myPID.SetTunings(p,i,d);
+  }
+  else
+  {
+    myPID.SetTunings(pa,ia,da);
+  }*/
   myPID.Compute();
   //thrLevel = 1800+0.784*Output;
   thrLevel = minThrottle + map(Output, 0, 255, 0, 2050 - minThrottle);
