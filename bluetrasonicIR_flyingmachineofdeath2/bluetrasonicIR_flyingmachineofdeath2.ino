@@ -18,7 +18,7 @@
 double Input, Output;
 double dist = 0;
 double setPoint;
-double p = 4.0, i = 0.5, d = 0.0;
+double p = 0.25, i = 0.5, d = 0.0;
 //Specify the links and initial tuning parameters
 PID myPID(&dist, &Output, &setPoint, p, i, d, DIRECT);
 //
@@ -47,7 +47,7 @@ byte irPinW = 9;
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
-int adjustment = 3;
+int adjustment = 1;
 bool state[4];  //north, east, south, west in that order
 int count[4] = {0, 0, 0, 0};
 int comp[4] = {0, 0, 0, 0};
@@ -60,7 +60,7 @@ SoftwareSerial blue(8, 7); //RX, TX
 
 void setup() {
 
-  setPoint = 25;
+  setPoint = 100;
   myPID.SetMode(AUTOMATIC);
 
   Serial.begin(115200);
@@ -115,8 +115,8 @@ void loop()  {
     ptchLevel = ptchMid + ( count[0] - count[2] - (comp[0] - comp[2]) ) * adjustment;
     rlLevel = rlMid + ( count[1] - count[3] - (comp[1] - comp[3]) ) * adjustment;
 
-    // Serial.print("p" + String(ptchLevel));
-    // Serial.print("r" + String(rlLevel));
+     Serial.print("p" + String(ptchLevel));
+     Serial.print("r" + String(rlLevel));
   }
 
   blue.listen();
