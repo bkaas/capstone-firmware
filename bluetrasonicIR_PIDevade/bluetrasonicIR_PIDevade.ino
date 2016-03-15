@@ -53,7 +53,7 @@ byte irPinW = A5;
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
-int adjustment = 1;
+float adjustment = 0.1;
 bool state[4];  //north, east, south, west in that order
 int count[4] = {0, 0, 0, 0};
 int comp[4] = {0, 0, 0, 0};
@@ -99,7 +99,7 @@ void loop()  {
     }
   }
 
-  if ( infrared ) {
+  if ( infrared && dist > 20 ) {
 
     state[0] = digitalRead(irPinN);
     state[1] = digitalRead(irPinE);
@@ -122,7 +122,7 @@ void loop()  {
       tmpDir[i] = (bool)comp[i]*tmpDir[i];
       tmpDir[i+2] = (bool)comp[i+2]*tmpDir[i+2];
 
-      Serial.print(dir[i] + String(midVal[i] + ( - count[i] + count[i+2] + (comp[i] - comp[i+2]) ) * adjustment));
+      Serial.print(dir[i] + String(midVal[i] + (int)round(( - count[i] + count[i+2] + (comp[i] - comp[i+2]) ) * adjustment)));
 
     }
   }
@@ -261,7 +261,7 @@ void loop()  {
         c = blue.read();
         tmpStr += (char)c;
       }
-      adjustment = tmpStr.toInt();
+      adjustment = float(tmpStr.toInt());
       tmpStr = "";
       break;
 
