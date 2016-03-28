@@ -19,10 +19,10 @@ double Input, Output;
 double dist = 0;
 double setPoint;
 //Below setpoint constants:
-double p = .5, i = 0.05, d = 2.0;
+double p = 2.8, i = 0.0, d = 0.0; //p=2.7, i=0.81
 
 //Above setpoint constants:
-double pa = 0.2*p, ia = i, da = d;
+double pa = 0.8*p, ia = 0.8*i, da = 0.0;
 
 
 //Specify the links and initial tuning parameters
@@ -36,7 +36,7 @@ bool infrared = 0;
 
 float thrLevel = 1201;
 int midVal[3] = {1500, 1500, 1500}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
-int minThrottle = 1650;
+int minThrottle = 1760;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
 
@@ -53,7 +53,7 @@ byte irPinW = A5;
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
-float adjustment = 0.1;
+int adjustment = 100;
 bool state[4];  //north, east, south, west in that order
 int count[4] = {0, 0, 0, 0};
 int comp[4] = {0, 0, 0, 0};
@@ -99,37 +99,43 @@ void loop()  {
     }
   }
 
-  if ( infrared && dist > 20 ) {
+  if ( infrared && dist > 10) {
 
     state[0] = digitalRead(irPinN);
-    state[1] = digitalRead(irPinE);
     state[2] = digitalRead(irPinS);
-    state[3] = digitalRead(irPinW);
+    Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
+    
+//    state[1] = digitalRead(irPinE);
+//    state[3] = digitalRead(irPinW);    
+//    Serial.print("r" + String(midVal[1] + adjustment*(!state[3] - !state[1])));
+    
+//    for (int i = 0; i < 2; i++) {
+//      countPrev[i] = count[i];
+//      countPrev[i+2] = count[i+2];
+//      
+//      count[i] = !state[i] * (count[i] + 1);
+//      count[i+2] = !state[i+2] * (count[i+2] + 1);
+//
+//      tmpDir[i] = count[i] - countPrev[i] < 0 ? countPrev[i] : tmpDir[i];
+//      tmpDir[i+2] = count[i+2] - countPrev[i+2] < 0 ? countPrev[i+2] : tmpDir[i+2];
+//      
+//      comp[i] = comp[i] < tmpDir[i] ? comp[i] + 1 : 0;
+//      comp[i+2] = comp[i+2] < tmpDir[i+2] ? comp[i+2] + 1 : 0;
+//      
+//      tmpDir[i] = (bool)comp[i]*tmpDir[i];
+//      tmpDir[i+2] = (bool)comp[i+2]*tmpDir[i+2];
 
-    for (int i = 0; i < 2; i++) {
-      countPrev[i] = count[i];
-      countPrev[i+2] = count[i+2];
-      
-      count[i] = !state[i] * (count[i] + 1);
-      count[i+2] = !state[i+2] * (count[i+2] + 1);
+//      Serial.print(dir[i] + String(midVal[i] + (int)round(( - count[i] + count[i+2] + (comp[i] - comp[i+2]) ) * adjustment)));
+//      Serial.print(dir[i] + String(midVal[i] - 50*state[i] + 50*state[i+2]));
+//      Serial.print(!state[i]);  Serial.print("    "); Serial.print(!state[i+2]);  Serial.print("    ");
 
-      tmpDir[i] = count[i] - countPrev[i] < 0 ? countPrev[i] : tmpDir[i];
-      tmpDir[i+2] = count[i+2] - countPrev[i+2] < 0 ? countPrev[i+2] : tmpDir[i+2];
-      
-      comp[i] = comp[i] < tmpDir[i] ? comp[i] + 1 : 0;
-      comp[i+2] = comp[i+2] < tmpDir[i+2] ? comp[i+2] + 1 : 0;
-      
-      tmpDir[i] = (bool)comp[i]*tmpDir[i];
-      tmpDir[i+2] = (bool)comp[i+2]*tmpDir[i+2];
-
-      Serial.print(dir[i] + String(midVal[i] + (int)round(( - count[i] + count[i+2] + (comp[i] - comp[i+2]) ) * adjustment)));
-
-    }
+//    }
+//      Serial.println();
   }
 
   blue.listen();
   if (blue.isListening()) {
-    delay(30); //does this really need to be this long? 50 sort of works?
+    delay(50); //does this really need to be this long? 50 sort of works?
     blueval = blue.read();
   }
 
@@ -261,7 +267,7 @@ void loop()  {
         c = blue.read();
         tmpStr += (char)c;
       }
-      adjustment = float(tmpStr.toInt());
+      adjustment = tmpStr.toInt();
       tmpStr = "";
       break;
 
@@ -293,7 +299,7 @@ float thrPID() {
   }*/
   myPID.Compute();
   //thrLevel = 1800+0.784*Output;
-  thrLevel = minThrottle + map(Output, 0, 255, 0, 2050 - minThrottle);
+  thrLevel = minThrottle + map(Output, 0, 255, 0, 1999 - minThrottle);
 
   return thrLevel;
 }
