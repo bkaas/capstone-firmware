@@ -10,10 +10,15 @@
 #include "RX.h"
 #include <EEPROM.h>
 
+#define MAX(a, b) ((a > b) ? a : b)
 String thrLevel;
 String rlLevel;
 String ptchLevel;
 String yawLevel;
+String tmpString;
+
+int minnierThrottle = 1600;
+int tmpInt;
 
 ///************************************** MultiWii Serial Protocol *******************************************************/
 //// Multiwii Serial Protocol 0
@@ -208,31 +213,32 @@ void serialCom() {
       c = SerialRead(CURRENTPORT);
 
       switch (c) {
-        
+
         /****ARM****/
         case 'a':
           f.ARMED ^= 1;
           conf.throttleIn = 1100;
           break;
-  
+
         case 'q':
           for (int i = 0 ; i < EEPROM.length() ; i++) {
             EEPROM.write(i, 0);
           }
           break;
-  
+
         /*****THROTTLE*****/
         case 't':
-          if(f.ARMED == 1) {
+          if (f.ARMED == 1) {
             for (int i = 0; i < 4; i++) {
               c = SerialRead(CURRENTPORT);
               thrLevel += (char)c;
             }
-            conf.throttleIn = thrLevel.toInt();
+            tmpInt = MAX(minnierThrottle, thrLevel.toInt());
+            conf.throttleIn = tmpInt;
             thrLevel = "";
           }
           break;
-  
+
         /******ROLL*****/
         case 'r':
           if (f.ARMED == 1) {
@@ -244,9 +250,9 @@ void serialCom() {
             rlLevel = "";
           }
           break;
-  
+
         /******PITCH*****/
-        case 'p': 
+        case 'p':
           if (f.ARMED == 1) {
             for (int i = 0; i < 4; i++) {
               c = SerialRead(CURRENTPORT);
@@ -256,7 +262,7 @@ void serialCom() {
             ptchLevel = "";
           }
           break;
-  
+
         /*******YAW*******/
         case 'y':
           if (f.ARMED == 1) {
@@ -268,7 +274,17 @@ void serialCom() {
             yawLevel = "";
           }
           break;
-        
+        /**********MINNIERTHROTTLE***********/
+        case 'm':
+          if (f.ARMED == 1) {
+            for (int i = 0; i < 4; i++) {
+              c = SerialRead(CURRENTPORT);
+              tmpString += (char)c;
+            }
+            minnierThrottle=tmpString.toInt();
+            tmpString = "";
+          }
+          break;
       }
     }
 

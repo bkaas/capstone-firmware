@@ -83,6 +83,7 @@ void setup() {
   pinMode(irPinW, INPUT);
 
   pinMode(enablePin, OUTPUT);
+  
 
 }
 
@@ -99,12 +100,13 @@ void loop()  {
     }
   }
 
-  if ( infrared && dist > 10) {
-
+  //if ( infrared && dist > 10) {
+  if ( infrared ) {
     state[0] = digitalRead(irPinN);
     state[2] = digitalRead(irPinS);
-    Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
-    
+    if((!state[0]-!state[2])){
+      Serial.println("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
+    }
 //    state[1] = digitalRead(irPinE);
 //    state[3] = digitalRead(irPinW);    
 //    Serial.print("r" + String(midVal[1] + adjustment*(!state[3] - !state[1])));
@@ -149,7 +151,7 @@ void loop()  {
 
     case 'u': //if(blueval == 'u'){  //toggle ultrasonic measurements, with ramp up to minimize initial error by Dan
       Serial.print('t'+ String(minThrottle+50));
-      delay(300);
+      delay(30);
       
       ultra ^= 1;
       break;
@@ -278,6 +280,8 @@ void loop()  {
       }
       minThrottle = tmpStr.toInt();
       tmpStr = "";
+      Serial.print("m" + minThrottle);
+      delay(20);
       break;
   
     case 'q': //EEPROM Clear

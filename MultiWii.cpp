@@ -1006,11 +1006,11 @@ void loop () {
       // bumpless transfer to Level mode
       if (!f.ANGLE_MODE) {
         errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
-        f.ANGLE_MODE = 1;
+        f.ANGLE_MODE = 1; //Brendan is bitch
       }
     } else {
       // failsafe support
-      f.ANGLE_MODE = 1;
+      f.ANGLE_MODE = 1; //it vaz dis vun
     }
     if ( rcOptions[BOXHORIZON] ) {
       f.ANGLE_MODE = 0;
@@ -1284,7 +1284,7 @@ void loop () {
 #if defined(ACROTRAINER_MODE)
     if (f.ANGLE_MODE) {
       if (abs(rcCommand[ROLL]) + abs(rcCommand[PITCH]) >= ACROTRAINER_MODE ) {
-        f.ANGLE_MODE = 1; //changed to 1 by Alex
+        f.ANGLE_MODE = 0; //changed to 1 by Alex
         f.HORIZON_MODE = 0; //changed to 1 by Alex
         f.MAG_MODE = 0;
         f.BARO_MODE = 0;
