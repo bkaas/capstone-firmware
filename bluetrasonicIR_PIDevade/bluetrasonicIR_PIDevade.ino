@@ -60,7 +60,10 @@ int comp[4] = {0, 0, 0, 0};
 int countPrev[4];
 int tmpDir[4];
 String dir[2] = {"p","r"};
-
+int timeout=0;
+int direc;
+unsigned long previousMillis1, previousMillis2;
+bool go = 1;
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8, 7); //RX, TX
@@ -88,7 +91,7 @@ void setup() {
 }
 
 void loop()  {
-
+  unsigned long currentMillis = millis();
   if ( ultra ) {
     UltrasonicBus.listen();
     if (UltrasonicBus.isListening()) {
@@ -99,14 +102,28 @@ void loop()  {
       Serial.print("t" + String(tmpInt));
     }
   }
-
-  //if ( infrared && dist > 10) {
+//&& dist > 10
   if ( infrared ) {
     state[0] = digitalRead(irPinN);
     state[2] = digitalRead(irPinS);
-    if((!state[0]-!state[2])){
-      Serial.println("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
+    if((!state[0]-!state[2]) && go){
+      Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
+      previousMillis1 = currentMillis;
+      direc = adjustment*(!state[2] - !state[0]);
+      timeout = 1;
+      go = 0;
     }
+    if (((currentMillis-previousMillis1) >= 500) && timeout==1 && state[0] && state[2]){
+       Serial.print("p" + String(midVal[0] - (int)(0.75*direc)));
+       previousMillis2 = currentMillis;
+       timeout =2;
+       direc = 0;
+       go = 1;
+     }
+    if (((currentMillis-previousMillis2) >= 500) && timeout==2){
+       Serial.print("p" + String(midVal[0]));
+       timeout =0;
+     }
 //    state[1] = digitalRead(irPinE);
 //    state[3] = digitalRead(irPinW);    
 //    Serial.print("r" + String(midVal[1] + adjustment*(!state[3] - !state[1])));
@@ -279,8 +296,8 @@ void loop()  {
         tmpStr += (char)c;
       }
       minThrottle = tmpStr.toInt();
+      Serial.print("m" + tmpStr);
       tmpStr = "";
-      Serial.print("m" + minThrottle);
       delay(20);
       break;
   
