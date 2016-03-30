@@ -60,10 +60,11 @@ int comp[4] = {0, 0, 0, 0};
 int countPrev[4];
 int tmpDir[4];
 String dir[2] = {"p","r"};
-int timeout=0;
-int direc;
-unsigned long previousMillis1, previousMillis2;
-bool go = 1;
+int timeout=0, timeout1=0;
+int direc, direc1;
+unsigned long previousMillis1, previousMillis2, previousMillis3, previousMillis4;
+bool go = 1, go1 = 1;
+int dip = 1000;
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8, 7); //RX, TX
@@ -92,6 +93,7 @@ void setup() {
 
 void loop()  {
   unsigned long currentMillis = millis();
+  
   if ( ultra ) {
     UltrasonicBus.listen();
     if (UltrasonicBus.isListening()) {
@@ -102,10 +104,13 @@ void loop()  {
       Serial.print("t" + String(tmpInt));
     }
   }
-//&& dist > 10
-  if ( infrared ) {
+  
+  if ( infrared && dist > 5 ) {
+    
+    /****PITCH****/
     state[0] = digitalRead(irPinN);
     state[2] = digitalRead(irPinS);
+    
     if((!state[0]-!state[2]) && go){
       Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
       previousMillis1 = currentMillis;
@@ -113,7 +118,7 @@ void loop()  {
       timeout = 1;
       go = 0;
     }
-    if (((currentMillis-previousMillis1) >= 500) && timeout==1 && state[0] && state[2]){
+    if (((currentMillis-previousMillis1) >= dip) && timeout==1 && state[0] && state[2]){
        Serial.print("p" + String(midVal[0] - (int)(0.75*direc)));
        previousMillis2 = currentMillis;
        timeout =2;
@@ -124,32 +129,30 @@ void loop()  {
        Serial.print("p" + String(midVal[0]));
        timeout =0;
      }
-//    state[1] = digitalRead(irPinE);
-//    state[3] = digitalRead(irPinW);    
-//    Serial.print("r" + String(midVal[1] + adjustment*(!state[3] - !state[1])));
+
+
+    /****ROLL****/
+    state[1] = digitalRead(irPinE);
+    state[3] = digitalRead(irPinW);
     
-//    for (int i = 0; i < 2; i++) {
-//      countPrev[i] = count[i];
-//      countPrev[i+2] = count[i+2];
-//      
-//      count[i] = !state[i] * (count[i] + 1);
-//      count[i+2] = !state[i+2] * (count[i+2] + 1);
-//
-//      tmpDir[i] = count[i] - countPrev[i] < 0 ? countPrev[i] : tmpDir[i];
-//      tmpDir[i+2] = count[i+2] - countPrev[i+2] < 0 ? countPrev[i+2] : tmpDir[i+2];
-//      
-//      comp[i] = comp[i] < tmpDir[i] ? comp[i] + 1 : 0;
-//      comp[i+2] = comp[i+2] < tmpDir[i+2] ? comp[i+2] + 1 : 0;
-//      
-//      tmpDir[i] = (bool)comp[i]*tmpDir[i];
-//      tmpDir[i+2] = (bool)comp[i+2]*tmpDir[i+2];
-
-//      Serial.print(dir[i] + String(midVal[i] + (int)round(( - count[i] + count[i+2] + (comp[i] - comp[i+2]) ) * adjustment)));
-//      Serial.print(dir[i] + String(midVal[i] - 50*state[i] + 50*state[i+2]));
-//      Serial.print(!state[i]);  Serial.print("    "); Serial.print(!state[i+2]);  Serial.print("    ");
-
-//    }
-//      Serial.println();
+    if((!state[1]-!state[3]) && go1){
+      Serial.print("r" + String(midVal[1] + adjustment*(!state[3] - !state[1])));
+      previousMillis3 = currentMillis;
+      direc1 = adjustment*(!state[3] - !state[1]);
+      timeout1 = 1;
+      go1 = 0;
+    }
+    if (((currentMillis-previousMillis3) >= dip) && timeout1==1 && state[1] && state[3]){
+       Serial.print("r" + String(midVal[1] - (int)(0.75*direc1)));
+       previousMillis4 = currentMillis;
+       timeout1 =2;
+       direc1 = 0;
+       go1 = 1;
+     }
+    if (((currentMillis-previousMillis4) >= 500) && timeout1==2){
+       Serial.print("r" + String(midVal[1]));
+       timeout1 =0;
+     }
   }
 
   blue.listen();
@@ -290,6 +293,15 @@ void loop()  {
       tmpStr = "";
       break;
 
+    case 'g': //
+      for (int i = 0; i < 4; i++) {
+        c = blue.read();
+        tmpStr += (char)c;
+      }
+      dip = tmpStr.toInt();
+      tmpStr = "";
+      break;
+
     case 'm': //minimum throttle
       for (int i = 0; i < 4; i++) {
         c = blue.read();
@@ -310,16 +322,7 @@ void loop()  {
 
 float thrPID() {
   float thrErr = 0;
-
-  /*if(dist<setPoint){
-    myPID.SetTunings(p,i,d);
-  }
-  else
-  {
-    myPID.SetTunings(pa,ia,da);
-  }*/
   myPID.Compute();
-  //thrLevel = 1800+0.784*Output;
   thrLevel = minThrottle + map(Output, 0, 255, 0, 1999 - minThrottle);
 
   return thrLevel;
