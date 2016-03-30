@@ -186,7 +186,7 @@ int runUltra() {
 int runPitchIR() {
   /****PITCH****/
   //state[0] = !digitalRead(irPinN); //fucked wit dis
-  state[2] = !digitalRead(irPinS);
+  state[2] = 0; //!digitalRead(irPinS);
   
     if((state[0]-state[2]) && go){
       previousMillis1 = currentMillis;
@@ -204,6 +204,7 @@ int runPitchIR() {
      }
      else if (((currentMillis-previousMillis2) >= 500) && timeout==2){
        timeout = 0;
+       goEvade = 0;
        return midVal[0];
      }
      else return 0;
@@ -212,8 +213,8 @@ int runPitchIR() {
 // 4. IR Roll main loop block.
 int runRollIR() {
     /****ROLL****/ 
-  state[1] = !digitalRead(irPinE);
-  state[3] = !digitalRead(irPinW); 
+  state[1] = 0;//!digitalRead(irPinE);
+  state[3] = 0;//!digitalRead(irPinW); 
         
     if((state[1]-state[3]) && go1){
       previousMillis3 = currentMillis;
