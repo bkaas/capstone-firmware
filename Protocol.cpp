@@ -220,20 +220,6 @@ void serialCom() {
           conf.throttleIn = 1100;
           break;
 
-        /*****DATA PACKET*****/
-        case 'd':
-          if(f.ARMED == 1) {
-            for (int i = 0; i < 4; i++) {
-              c = SerialRead(CURRENTPORT);
-              packet |= (uint32_t)c << 8*i;
-            }
-            if( ( packet & 0x000003FF) > 0 ) conf.rollIn = packet & 0x000003FF;
-            if( ( (packet>>10) & 0x000003FF ) > 0) conf.pitchIn = (packet>>10) & 0x000003FF;
-            conf.throttleIn = (packet>>20) & 0x000003FF;
-            packet = 0;
-          }
-          break;
-
         case 'q':
           for (int i = 0 ; i < EEPROM.length() ; i++) {
             EEPROM.write(i, 0);
@@ -299,7 +285,6 @@ void serialCom() {
             tmpString = "";
           }
           break;
-
       }
     }
 
