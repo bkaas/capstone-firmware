@@ -83,20 +83,15 @@ void setup() {
 void loop()  {
   currentMillis = millis();
   
-  if ( ultra ) tmpThrottle = runUltra();
+  if ( ultra ) Serial.print("t" + String(runUltra()));
   if ( infrared && dist > minDist) {
-    tmpPitch = runPitchIR();
-    tmpRoll = runRollIR();
+    Serial.print("p" + String(runPitchIR()));
+    Serial.print("r" + String(runRollIR()));
   }
-  if (goEvade) {
-    state[0] = 1;
-    tmpPitch = runPitchIR();
-    state[0] = 0;
-  }
-  runBlue();
   
-  packet = pack(tmpRoll, tmpPitch, tmpThrottle);
-  Serial.write(packet,sizeof(packet));
+  Serial.print("p" + String(runPitchIR()));
+  state[0] = 0;
+  runBlue();
 }
 
 /**************************************
@@ -105,7 +100,6 @@ void loop()  {
  * 2) Communcation with Ultrasonic sensor.
  * 3) Setting pinModes and defaults for adjustable parameters.
  * 4) Main loop blocks (ultrasonic, IR, Bluetooth).
- * 5) Compiling control signals and communicating to quadcopter.
  */
 
 // 1. PID black box.
@@ -195,19 +189,20 @@ int runPitchIR() {
       go = 0;
       return (midVal[0] + adjustment*(state[2] - state[0]));
     }
-    else if (((currentMillis-previousMillis1) >= dip) && timeout==1 && state[0] && state[2]){
+    else if (((currentMillis-previousMillis1) >= dip) && timeout==1 && !state[0] && !state[2]){
        previousMillis2 = currentMillis;
        timeout =2;
-       direc = 0;
        go = 1;
        return (midVal[0] - (int)(0.75*direc));
      }
      else if (((currentMillis-previousMillis2) >= 500) && timeout==2){
        timeout = 0;
-       goEvade = 0;
        return midVal[0];
      }
-     else return 0;
+     else {
+       goEvade = 0;
+       return 0;
+     }
 }
 
 // 4. IR Roll main loop block.
@@ -223,15 +218,14 @@ int runRollIR() {
       go1 = 0;
       return (midVal[1] + adjustment*(state[3] - state[1]));
     }
-    else if (((currentMillis-previousMillis3) >= dip) && timeout1==1 && state[1] && state[3]){
+    else if (((currentMillis-previousMillis3) >= dip) && timeout1==1 && !state[1] && !state[3]){
        previousMillis4 = currentMillis;
        timeout1 =2;
-       direc1 = 0;
        go1 = 1;
        return (midVal[1] - (int)(0.75*direc1));
      }
      else if (((currentMillis-previousMillis4) >= 500) && timeout1==2){
-       timeout1 =0;
+       timeout1 = 0;
        return midVal[1];
      }
      else return 0;
@@ -370,7 +364,7 @@ void runBlue() {
       tmpStr = "";
       break;
 
-    case 'g': //
+    case 'o': //
       for (int i = 0; i < 4; i++) {
         c = blue.read();
         tmpStr += (char)c;
@@ -396,25 +390,7 @@ void runBlue() {
       break;
 
     case '!': //EEPROM Clear
-      goEvade = 1;
+      state[0] = 1;
       break;
   }
-}
-
-// 5. Compiling control signal, serial communication with quadcopter.
-byte * pack(int roll, int pitch, int throttle){
-  uint32_t packet = 0;
-  byte packets[5];
-  
-  packet |= (uint32_t)(roll - 1000);
-  packet |= ( (uint32_t)(pitch - 1000) << 10);
-  packet |= ( (uint32_t)(throttle - 1000) << 20);
-
-  packets[0] = 'd';
-  packets[1] = 0x000000FF & packet;
-  packets[2] = 0x0000FF00 & packet;
-  packets[3] = 0x00FF0000 & packet;
-  packets[4] = 0xFF000000 & packet;
-
-  return packets;
 }
