@@ -35,7 +35,7 @@ bool ultra = 0;
 bool infrared = 0;
 
 float thrLevel = 1201;
-int midVal[3] = {1500, 1500, 1500}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
+int midVal[3] = {1491, 1522, 1500}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
 int minThrottle = 1760;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
@@ -63,9 +63,9 @@ int timeout=0, timeout1=0;
 int direc, direc1;
 unsigned long previousMillis1, previousMillis2, previousMillis3, previousMillis4;
 bool go = 1, go1 = 1;
-int adjustment = 50;
+int adjustment = 100;
 int dip = 500;
-double compFrac = 0.25;
+double compFrac = 0.5;
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8, 7); //RX, TX
@@ -167,7 +167,7 @@ void loop()  {
     case 'a': //if(blueval == 'a'){  //ARM
       Serial.print(blueval);
       //delay(20); //if we delay above, do we need delay here?
-      thrLevel = 1201;
+      thrLevel = 1201;    
       break;
 
     case 'u': //if(blueval == 'u'){  //toggle ultrasonic measurements, with ramp up to minimize initial error by Dan
@@ -175,6 +175,9 @@ void loop()  {
       delay(30);
       
       ultra ^= 1;
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
     case 'f':
@@ -197,6 +200,9 @@ void loop()  {
       midVal[1] = MAX(midVal[1], 1370);  //1370 trim min from multiwii
       Serial.print("r" + String(midVal[1]));
       delay(20);
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
     case 'e': //if(blueval == 'e'){  //up roll midVal (east)
@@ -204,6 +210,9 @@ void loop()  {
       midVal[1] = MIN(midVal[1], 1585);  //1585 trim max from multiwii
       Serial.print("r" + String(midVal[1]));
       delay(20);
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
     case 's': //if(blueval == 's'){  //down pitch midVal (south)
@@ -211,6 +220,9 @@ void loop()  {
       midVal[0] = MAX(midVal[0], 1370);
       Serial.print("p" + String(midVal[0]));
       delay(20);
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
     case 'n': //if(blueval == 'n'){  //up pitch midVal (north)
@@ -218,6 +230,9 @@ void loop()  {
       midVal[0] = MIN(midVal[0], 1585);
       Serial.print("p" + String(midVal[0]));
       delay(20);
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
     case 'l': //if(blueval == 'l'){  //down yaw midVal (left)
@@ -244,6 +259,9 @@ void loop()  {
       delay(20);
       Serial.print("y" + String(midVal[2]));
       delay(20);
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
     case 'p': //if (blueval == 'k') {
@@ -312,15 +330,31 @@ void loop()  {
       Serial.print("m" + tmpStr);
       tmpStr = "";
       delay(20);
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
   
     case 'q': //EEPROM Clear
-      Serial.print(blueval);
+      Serial.print('e');
       delay(20); //if we delay above, do we need delay here?
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
    case '!': //fake pitch
       state[0] = 0;
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
+      break;
+
+   case '?': //fake pitch
+      state[2] = 0;
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
 
    case 'g': //fraction of dip to compensate
@@ -331,6 +365,9 @@ void loop()  {
       compFrac = double(tmpStr.toInt());
       compFrac = compFrac / 1000.0;
       tmpStr = "";
+      digitalWrite(enablePin, 1);
+      delay(15);
+      digitalWrite(enablePin, 0);
       break;
   }
 
@@ -351,7 +388,7 @@ void loop()  {
        direc = 0;
        go = 1;
      }
-    if (((currentMillis-previousMillis2) >= 100) && timeout==2){
+    if (((currentMillis-previousMillis2) >= 300) && timeout==2){
        Serial.print("p" + String(midVal[0]));
        timeout =0;
      }
