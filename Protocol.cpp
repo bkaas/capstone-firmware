@@ -17,7 +17,7 @@ String ptchLevel;
 String yawLevel;
 String tmpString;
 
-int minnierThrottle = 1600;
+int minnierThrottle = 1760;
 int tmpInt;
 
 ///************************************** MultiWii Serial Protocol *******************************************************/

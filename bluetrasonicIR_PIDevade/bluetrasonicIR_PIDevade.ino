@@ -53,8 +53,7 @@ byte irPinW = A5;
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
-int adjustment = 100;
-bool state[4];  //north, east, south, west in that order
+bool state[4] = {1,1,1,1};  //north, east, south, west in that order
 int count[4] = {0, 0, 0, 0};
 int comp[4] = {0, 0, 0, 0};
 int countPrev[4];
@@ -64,7 +63,9 @@ int timeout=0, timeout1=0;
 int direc, direc1;
 unsigned long previousMillis1, previousMillis2, previousMillis3, previousMillis4;
 bool go = 1, go1 = 1;
-int dip = 1000;
+int adjustment = 50;
+int dip = 500;
+double compFrac = 0.25;
 
 SoftwareSerial UltrasonicBus(txrxPin, txrxPin);
 SoftwareSerial blue(8, 7); //RX, TX
@@ -119,7 +120,7 @@ void loop()  {
       go = 0;
     }
     if (((currentMillis-previousMillis1) >= dip) && timeout==1 && state[0] && state[2]){
-       Serial.print("p" + String(midVal[0] - (int)(0.75*direc)));
+       Serial.print("p" + String(midVal[0] - (int)(compFrac*direc)));
        previousMillis2 = currentMillis;
        timeout =2;
        direc = 0;
@@ -143,7 +144,7 @@ void loop()  {
       go1 = 0;
     }
     if (((currentMillis-previousMillis3) >= dip) && timeout1==1 && state[1] && state[3]){
-       Serial.print("r" + String(midVal[1] - (int)(0.75*direc1)));
+       Serial.print("r" + String(midVal[1] - (int)(compFrac*direc1)));
        previousMillis4 = currentMillis;
        timeout1 =2;
        direc1 = 0;
@@ -293,7 +294,7 @@ void loop()  {
       tmpStr = "";
       break;
 
-    case 'g': //
+    case 'o': //
       for (int i = 0; i < 4; i++) {
         c = blue.read();
         tmpStr += (char)c;
@@ -317,7 +318,45 @@ void loop()  {
       Serial.print(blueval);
       delay(20); //if we delay above, do we need delay here?
       break;
+
+   case '!': //fake pitch
+      state[0] = 0;
+      break;
+
+   case 'g': //fraction of dip to compensate
+      for (int i = 0; i < 4; i++) {
+        c = blue.read();
+        tmpStr += (char)c;
+      }
+      compFrac = double(tmpStr.toInt());
+      compFrac = compFrac / 1000.0;
+      tmpStr = "";
+      break;
   }
+
+  /***************Fake Pitch******************/
+  
+    
+    if((!state[0]-!state[2]) && go){
+      Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
+      previousMillis1 = currentMillis;
+      direc = adjustment*(!state[2] - !state[0]);
+      timeout = 1;
+      go = 0;
+    }
+    if (((currentMillis-previousMillis1) >= dip) && timeout==1 && state[0] && state[2]){
+       Serial.print("p" + String(midVal[0] - (int)(compFrac*direc)));
+       previousMillis2 = currentMillis;
+       timeout =2;
+       direc = 0;
+       go = 1;
+     }
+    if (((currentMillis-previousMillis2) >= 100) && timeout==2){
+       Serial.print("p" + String(midVal[0]));
+       timeout =0;
+     }
+
+  state[0] = 1;
 }
 
 float thrPID() {
