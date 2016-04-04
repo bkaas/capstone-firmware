@@ -20,6 +20,17 @@ String tmpString;
 int minnierThrottle = 1760;
 int tmpInt;
 
+//********************Roll and Pitch***************//
+bool state[4] = {1,1,1,1};  //north, east, south, west in that order
+int timeout=0, timeout1=0;
+int direc, direc1;
+unsigned long previousMillis1, previousMillis2, previousMillis3, previousMillis4;
+bool go = 1, go1 = 1;
+int adjustment = 100;
+int dip = 500;
+double compFrac = 0.5;
+bool infrared = 0;
+
 ///************************************** MultiWii Serial Protocol *******************************************************/
 //// Multiwii Serial Protocol 0
 //#define MSP_VERSION              0
@@ -170,7 +181,7 @@ void serialCom() {
   //      conf.throttleIn = 1350;
   //    }
   //  }
-
+  unsigned long currentMillis = millis();
   uint8_t c, n;
   static uint8_t offset[UART_NUMBER];
   static uint8_t dataSize[UART_NUMBER];
@@ -285,9 +296,43 @@ void serialCom() {
             tmpString = "";
           }
           break;
+        /************* PITCH****************/
+        case 'x':
+            state[0]=0;
+          break;
       }
     }
+      
+      /****PITCH****/
+    
 
+    
+      if(!state[0] && go){
+        //Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
+        conf.pitchIn = 1491+50;
+        previousMillis1 = currentMillis;
+        //direc = adjustment*(!state[2] - !state[0]);
+        timeout = 1;
+        go = 0;
+      }
+      
+      if (((currentMillis-previousMillis1) >= 1000) && timeout==1 && state[0]){
+       //Serial.print("p" + String(midVal[0] - (int)(compFrac*direc)));
+       conf.pitchIn = 1491-30;
+       previousMillis2 = currentMillis;
+       timeout =2;
+       //direc = 0;
+       go = 1;
+     }
+      
+      if (((currentMillis-previousMillis2) >= 500) && timeout==2){
+       //Serial.print("p" + String(midVal[0]));
+       conf.pitchIn = 1491;
+       timeout =0;
+       state[0]=1;
+      }
+
+    
     //      #ifdef SUPPRESS_ALL_SERIAL_MSP
     //        // no MSP handling, so go directly
     //        evaluateOtherData(c);
@@ -327,7 +372,7 @@ void serialCom() {
     //        }
     //      #endif // SUPPRESS_ALL_SERIAL_MSP
   }
-}
+  }
 
 //void  s_struct(uint8_t *cb,uint8_t siz) {
 //  headSerialReply(siz);
@@ -790,7 +835,7 @@ void serialCom() {
 //    }
 //  }
 //}
-//
+
 //static uint8_t debugmsg_available() {
 //  if (head_debug >= tail_debug) {
 //    return head_debug-tail_debug;

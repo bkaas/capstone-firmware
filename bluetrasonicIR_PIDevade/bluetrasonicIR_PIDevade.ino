@@ -10,7 +10,7 @@
 #define MAX(a, b) ((a > b) ? a : b)
 
 #define txrxPin A0
-#define srfAddress2 0x01
+#define srfAddress2 0x03
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
 
 //PID:
@@ -35,7 +35,7 @@ bool ultra = 0;
 bool infrared = 0;
 
 float thrLevel = 1201;
-int midVal[3] = {1491, 1522, 1500}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
+int midVal[3] = {1491, 1522, 1561}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
 int minThrottle = 1760;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
@@ -47,7 +47,7 @@ int tmpInt;
 
 // IR sensors
 byte irPinN = 12;
-byte irPinE = 11;
+byte irPinE = 11; 
 byte irPinS = 9;
 byte irPinW = A5;
 byte enablePin = 13;
@@ -114,6 +114,7 @@ void loop()  {
     
     if((!state[0]-!state[2]) && go){
       Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
+      delay(20);
       previousMillis1 = currentMillis;
       direc = adjustment*(!state[2] - !state[0]);
       timeout = 1;
@@ -121,6 +122,7 @@ void loop()  {
     }
     if (((currentMillis-previousMillis1) >= dip) && timeout==1 && state[0] && state[2]){
        Serial.print("p" + String(midVal[0] - (int)(compFrac*direc)));
+       delay(20);
        previousMillis2 = currentMillis;
        timeout =2;
        direc = 0;
@@ -128,6 +130,7 @@ void loop()  {
      }
     if (((currentMillis-previousMillis2) >= 500) && timeout==2){
        Serial.print("p" + String(midVal[0]));
+       delay(20);
        timeout =0;
      }
 
@@ -138,6 +141,7 @@ void loop()  {
     
     if((!state[1]-!state[3]) && go1){
       Serial.print("r" + String(midVal[1] + adjustment*(!state[3] - !state[1])));
+      delay(20);
       previousMillis3 = currentMillis;
       direc1 = adjustment*(!state[3] - !state[1]);
       timeout1 = 1;
@@ -145,6 +149,7 @@ void loop()  {
     }
     if (((currentMillis-previousMillis3) >= dip) && timeout1==1 && state[1] && state[3]){
        Serial.print("r" + String(midVal[1] - (int)(compFrac*direc1)));
+       delay(20);
        previousMillis4 = currentMillis;
        timeout1 =2;
        direc1 = 0;
@@ -152,6 +157,7 @@ void loop()  {
      }
     if (((currentMillis-previousMillis4) >= 500) && timeout1==2){
        Serial.print("r" + String(midVal[1]));
+       delay(20);
        timeout1 =0;
      }
   }
@@ -343,14 +349,14 @@ void loop()  {
       digitalWrite(enablePin, 0);
       break;
 
-   case '!': //fake pitch
+   case 'x': //fake pitch
       state[0] = 0;
       digitalWrite(enablePin, 1);
       delay(15);
       digitalWrite(enablePin, 0);
       break;
 
-   case '?': //fake pitch
+   case 'y': //fake pitch
       state[2] = 0;
       digitalWrite(enablePin, 1);
       delay(15);
@@ -374,7 +380,7 @@ void loop()  {
   /***************Fake Pitch******************/
   
     
-    if((!state[0]-!state[2]) && go){
+    if(!state[0]-!state[2] && go){
       Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
       previousMillis1 = currentMillis;
       direc = adjustment*(!state[2] - !state[0]);
@@ -394,6 +400,7 @@ void loop()  {
      }
 
   state[0] = 1;
+  state[2]= 1;
 }
 
 float thrPID() {
