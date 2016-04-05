@@ -19,9 +19,11 @@ String tmpString;
 
 int minnierThrottle = 1760;
 int tmpInt;
+int midPitch = 1500;
+int midRoll = 1515;
 
 //********************Roll and Pitch***************//
-bool state[4] = {1,1,1,1};  //north, east, south, west in that order
+bool state[4] = {0,0,0,0};  //north, east, south, west in that order
 int timeout=0, timeout1=0;
 int direc, direc1;
 unsigned long previousMillis1, previousMillis2, previousMillis3, previousMillis4;
@@ -30,6 +32,8 @@ int adjustment = 100;
 int dip = 500;
 double compFrac = 0.5;
 bool infrared = 0;
+int count = 0;
+//int count2 = 0;
 
 ///************************************** MultiWii Serial Protocol *******************************************************/
 //// Multiwii Serial Protocol 0
@@ -113,16 +117,16 @@ void evaluateCommand();
 uint8_t read8()  {
   return inBuf[indRX[CURRENTPORT]++][CURRENTPORT] & 0xff;
 }
-//uint16_t read16() {
-//  uint16_t t = read8();
-//  t+= (uint16_t)read8()<<8;
-//  return t;
-//}
-//uint32_t read32() {
-//  uint32_t t = read16();
-//  t+= (uint32_t)read16()<<16;
-//  return t;
-//}
+uint16_t read16() {
+  uint16_t t = read8();
+  t+= (uint16_t)read8()<<8;
+  return t;
+}
+uint32_t read32() {
+  uint32_t t = read16();
+  t+= (uint32_t)read16()<<16;
+  return t;
+}
 //
 //void serialize8(uint8_t a) {
 //  SerialSerialize(CURRENTPORT, a);
@@ -236,7 +240,11 @@ void serialCom() {
             EEPROM.write(i, 0);
           }
           break;
-
+        /*****SETVALS******/
+        case 's':
+            midPitch = rcData[PITCH];
+            midRoll = rcData[ROLL];
+          break;
         /*****THROTTLE*****/
         case 't':
           if (f.ARMED == 1) {
@@ -275,16 +283,16 @@ void serialCom() {
           break;
 
         /*******YAW*******/
-        case 'y':
-          if (f.ARMED == 1) {
-            for (int i = 0; i < 4; i++) {
-              c = SerialRead(CURRENTPORT);
-              ptchLevel += (char)c;
-            }
-            conf.yawIn = yawLevel.toInt();
-            yawLevel = "";
-          }
-          break;
+//        case 'y':
+//          if (f.ARMED == 1) {
+//            for (int i = 0; i < 4; i++) {
+//              c = SerialRead(CURRENTPORT);
+//              ptchLevel += (char)c;
+//            }
+//            conf.yawIn = yawLevel.toInt();
+//            yawLevel = "";
+//          }
+//          break;
         /**********MINNIERTHROTTLE***********/
         case 'm':
           if (f.ARMED == 1) {
@@ -296,41 +304,67 @@ void serialCom() {
             tmpString = "";
           }
           break;
-        /************* PITCH****************/
+        /************* PITCH/ROLL ****************/
         case 'x':
-            state[0]=0;
+            state[0]=1;
+            count=0;
+          break;
+
+        case 'y':
+            state[2]=1;
+            count=0;
+          break;
+        
+        case 'z':
+            state[1]=1;
+            count=0;
+//            count2=0;
+          break;
+
+        case 'u':
+            state[3]=1;
+            count=0;
+//            count2=0;
           break;
       }
     }
       
-      /****PITCH****/
-    
+      /****PITCH/ROLL****/
+        conf.pitchIn = midPitch - state[0]*150 + state[2]*150;
+        conf.rollIn = midRoll - state[1]*150 + state[3]*150;
+        
+        if(count > 100){
+          state[0] = 0;
+          state[1] = 0;
+          state[2] = 0;
+          state[3] = 0;
+          count = 0;
+        }
 
-    
-      if(!state[0] && go){
-        //Serial.print("p" + String(midVal[0] + adjustment*(!state[2] - !state[0])));
-        conf.pitchIn = 1491+50;
-        previousMillis1 = currentMillis;
-        //direc = adjustment*(!state[2] - !state[0]);
-        timeout = 1;
-        go = 0;
-      }
+//        if(count2 > 100){
+//          state[1] = 0;
+//          state[3] = 0;
+//          count2 = 0;
+//        }
+        
+        count++;
+//        count2++;
       
-      if (((currentMillis-previousMillis1) >= 1000) && timeout==1 && state[0]){
-       //Serial.print("p" + String(midVal[0] - (int)(compFrac*direc)));
-       conf.pitchIn = 1491-30;
-       previousMillis2 = currentMillis;
-       timeout =2;
-       //direc = 0;
-       go = 1;
-     }
-      
-      if (((currentMillis-previousMillis2) >= 500) && timeout==2){
-       //Serial.print("p" + String(midVal[0]));
-       conf.pitchIn = 1491;
-       timeout =0;
-       state[0]=1;
-      }
+//      if (((currentMillis-previousMillis1) >= 1000) && timeout==1 && state[0]){
+//       //Serial.print("p" + String(midVal[0] - (int)(compFrac*direc)));
+//       conf.pitchIn = 1491-30;
+//       previousMillis2 = currentMillis;
+//       timeout =2;
+//       //direc = 0;
+//       go = 1;
+//     }
+//      
+//      if (((currentMillis-previousMillis2) >= 500) && timeout==2){
+//       //Serial.print("p" + String(midVal[0]));
+//       conf.pitchIn = 1491;
+//       timeout =0;
+//       state[0]=1;
+//      }
 
     
     //      #ifdef SUPPRESS_ALL_SERIAL_MSP
