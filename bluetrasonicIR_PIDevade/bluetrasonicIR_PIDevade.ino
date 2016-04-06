@@ -35,8 +35,8 @@ bool ultra = 0;
 bool infrared = 0;
 
 float thrLevel = 1201;
-int midVal[3] = {1500,1515,1518}; // {1491, 1522, 1561}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
-int minThrottle = 1760;
+int midVal[3] = {1591,1520,1518}; // {1491, 1522, 1561}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
+int minThrottle = 1700;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
 
@@ -44,6 +44,9 @@ uint8_t c;
 String thr;
 String tmpStr;
 int tmpInt;
+
+//Hermionie: N = 12, E = 11, S = 9, W = A5
+//OldFuckful: N = 11, E = 9, S = A5, W = 12
 
 // IR sensors
 byte irPinN = 12; // 11; //12
@@ -107,7 +110,7 @@ void loop()  {
     }
   }
   
-  if ( infrared && dist > 5 ) {
+  if ( infrared && dist > 10 ) {
     
     /****PITCH/ROLL****/
     state[0] = digitalRead(irPinN);
@@ -125,15 +128,15 @@ void loop()  {
       previousMillis = currentMillis;
     }
 
-//    if (!state[1] && (currentMillis - previousMillis) >= 250) {
-//      Serial.print('z');
-//      previousMillis = currentMillis;
-//    }
-//
-//    if (!state[3] && (currentMillis - previousMillis) >= 250) {
-//      Serial.print('u');
-//      previousMillis = currentMillis;
-//    }
+    if (!state[1] && (currentMillis - previousMillis) >= 250) {
+      Serial.print('z');
+      previousMillis = currentMillis;
+    }
+
+    if (!state[3] && (currentMillis - previousMillis) >= 250) {
+      Serial.print('u');
+      previousMillis = currentMillis;
+    }
     
   }
 

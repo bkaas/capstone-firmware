@@ -16,8 +16,10 @@ String rlLevel;
 String ptchLevel;
 String yawLevel;
 String tmpString;
+int adjustment = 150;
+int faster = 0;
 
-int minnierThrottle = 1760;
+int minnierThrottle = 1700;
 int tmpInt;
 int midPitch = 1500;
 int midRoll = 1515;
@@ -25,13 +27,13 @@ int midRoll = 1515;
 //********************Roll and Pitch***************//
 bool state[4] = {0,0,0,0};  //north, east, south, west in that order
 int timeout=0, timeout1=0;
-int direc, direc1;
-unsigned long previousMillis1, previousMillis2, previousMillis3, previousMillis4;
-bool go = 1, go1 = 1;
-int adjustment = 100;
-int dip = 500;
-double compFrac = 0.5;
-bool infrared = 0;
+//int direc, direc1;
+//unsigned long previousMillis1, previousMillis2, previousMillis3, previousMillis4;
+//bool go = 1, go1 = 1;
+//int adjustment = 100;
+//int dip = 500;
+//double compFrac = 0.5;
+//bool infrared = 0;
 int count = 0;
 //int count2 = 0;
 
@@ -244,6 +246,8 @@ void serialCom() {
         case 's':
             midPitch = rcData[PITCH];
             midRoll = rcData[ROLL];
+            conf.pitchIn = midPitch;
+            conf.rollIn = midRoll;
           break;
         /*****THROTTLE*****/
         case 't':
@@ -308,30 +312,34 @@ void serialCom() {
         case 'x':
             state[0]=1;
             count=0;
+//            faster++;
           break;
 
         case 'y':
             state[2]=1;
             count=0;
+//            faster++;
           break;
         
         case 'z':
             state[1]=1;
             count=0;
 //            count2=0;
+//            faster++;
           break;
 
         case 'u':
             state[3]=1;
             count=0;
 //            count2=0;
+//            faster++;
           break;
       }
     }
       
       /****PITCH/ROLL****/
-        conf.pitchIn = midPitch - state[0]*150 + state[2]*150;
-        conf.rollIn = midRoll - state[1]*150 + state[3]*150;
+        conf.pitchIn = midPitch + (state[2] - state[0])*(adjustment + faster*5);
+        conf.rollIn = midRoll + (state[3] - state[1])*(adjustment + faster*5);
         
         if(count > 100){
           state[0] = 0;
