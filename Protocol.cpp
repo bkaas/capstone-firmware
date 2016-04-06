@@ -11,6 +11,7 @@
 #include <EEPROM.h>
 
 #define MAX(a, b) ((a > b) ? a : b)
+#define MIN(a, b) ((a < b) ? a : b)
 String thrLevel;
 String rlLevel;
 String ptchLevel;
@@ -340,6 +341,7 @@ void serialCom() {
       /****PITCH/ROLL****/
         conf.pitchIn = midPitch + (state[2] - state[0])*(adjustment + faster*5);
         conf.rollIn = midRoll + (state[3] - state[1])*(adjustment + faster*5);
+        conf.throttleIn = MIN( (conf.throttleIn + 100*(state[0] || state[1] || state[2] || state[3]) ), 1999);
         
         if(count > 100){
           state[0] = 0;
@@ -347,6 +349,7 @@ void serialCom() {
           state[2] = 0;
           state[3] = 0;
           count = 0;
+//          conf.throttleIn = conf.throttleIn + 25;
         }
 
 //        if(count2 > 100){
