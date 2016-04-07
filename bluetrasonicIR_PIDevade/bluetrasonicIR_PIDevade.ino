@@ -10,7 +10,7 @@
 #define MAX(a, b) ((a > b) ? a : b)
 
 #define txrxPin A0
-#define srfAddress2 0x01
+#define srfAddress2 0x02
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
 
 //PID:
@@ -49,10 +49,10 @@ int tmpInt;
 //OldFuckful: N = 11, E = 9, S = A5, W = 12
 
 // IR sensors
-byte irPinN = 12; // 11; //12
-byte irPinE = 11; //9; //11 
-byte irPinS = 9; // A5; //9
-byte irPinW = A5; //12; //A5
+byte irPinN = 11; //12 ;
+byte irPinE = 9; //11;
+byte irPinS = A5; //9;
+byte irPinW = 12; //A5;
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
