@@ -19,7 +19,7 @@ double Input, Output;
 double dist = 0;
 double setPoint;
 //Below setpoint constants:
-double p = 2.8, i = 0.0, d = 0.0; //p=2.7, i=0.81
+double p = 2.8, i = 0.0, d = 0.0; //p=2.8, i=0.81
 
 //Above setpoint constants:
 double pa = 0.8*p, ia = 0.8*i, da = 0.0;

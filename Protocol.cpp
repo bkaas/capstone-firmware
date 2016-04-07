@@ -17,13 +17,13 @@ String rlLevel;
 String ptchLevel;
 String yawLevel;
 String tmpString;
-int adjustment = 150;
+int adjustment = 100;
 int faster = 0;
 
 int minnierThrottle = 1700;
 int tmpInt;
-int midPitch = 1500;
-int midRoll = 1515;
+int midPitch = rcData[PITCH];
+int midRoll = rcData[ROLL];
 
 //********************Roll and Pitch***************//
 bool state[4] = {0,0,0,0};  //north, east, south, west in that order
@@ -339,9 +339,9 @@ void serialCom() {
     }
       
       /****PITCH/ROLL****/
-        conf.pitchIn = midPitch + (state[2] - state[0])*(adjustment + faster*5);
-        conf.rollIn = midRoll + (state[3] - state[1])*(adjustment + faster*5);
-        conf.throttleIn = MIN( (conf.throttleIn + 100*(state[0] || state[1] || state[2] || state[3]) ), 1999);
+        conf.pitchIn = midPitch + (state[2] - state[0])*(adjustment);
+        conf.rollIn = midRoll + (state[3] - state[1])*(adjustment);
+//        conf.throttleIn = MIN( (conf.throttleIn + 75*(state[0] || state[1] || state[2] || state[3]) ), 1999);
         
         if(count > 100){
           state[0] = 0;
