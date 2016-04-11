@@ -10,7 +10,7 @@
 #define MAX(a, b) ((a > b) ? a : b)
 
 #define txrxPin A0
-#define srfAddress2 0x01
+#define srfAddress2 0x03
 #define getRange 0x54                                        // Byte used to get range from SRF01 in cm 
 
 //PID:
@@ -36,7 +36,7 @@ bool infrared = 0;
 
 float thrLevel = 1201;
 int midVal[3] = {1500,1515,1518}; // {1491, 1522, 1561}; // pitch roll yaw midVal[1] = 1500; int midVal[0] = 1500; int midVal[2] = 1500;
-int minThrottle = 1760;
+int minThrottle = 1650;
 int trimStep = 2;
 int ptchLevel; int rlLevel;
 
@@ -46,10 +46,10 @@ String tmpStr;
 int tmpInt;
 
 // IR sensors
-byte irPinN = 12; // 11; //12
-byte irPinE = 11; //9; //11 
-byte irPinS = 9; // A5; //9
-byte irPinW = A5; //12; //A5
+byte irPinN = 11; //12
+byte irPinE = 9; //11 
+byte irPinS = A5; //9
+byte irPinW = 12; //A5
 byte enablePin = 13;
 
 // Roll and Pitch movement stuff
@@ -73,7 +73,7 @@ SoftwareSerial blue(8, 7); //RX, TX
 
 void setup() {
 
-  setPoint = 100;
+  setPoint = 60;
   myPID.SetMode(AUTOMATIC);
 
   Serial.begin(115200);
@@ -107,7 +107,7 @@ void loop()  {
     }
   }
   
-  if ( infrared && dist > 5 ) {
+  if ( infrared && dist > 20 ) {
     
     /****PITCH/ROLL****/
     state[0] = digitalRead(irPinN);
@@ -115,25 +115,25 @@ void loop()  {
     state[1] = digitalRead(irPinE);
     state[3] = digitalRead(irPinW);
 
-    if (!state[0] && (currentMillis - previousMillis) >= 250) {
+    if (!state[0] && (currentMillis - previousMillis) >= 150) {
       Serial.print('x');
       previousMillis = currentMillis;
     }
 
-    if (!state[2] && (currentMillis - previousMillis) >= 250) {
+    if (!state[2] && (currentMillis - previousMillis) >= 150) {
       Serial.print('y');
       previousMillis = currentMillis;
     }
 
-//    if (!state[1] && (currentMillis - previousMillis) >= 250) {
-//      Serial.print('z');
-//      previousMillis = currentMillis;
-//    }
-//
-//    if (!state[3] && (currentMillis - previousMillis) >= 250) {
-//      Serial.print('u');
-//      previousMillis = currentMillis;
-//    }
+    if (!state[1] && (currentMillis - previousMillis) >= 150) {
+      Serial.print('z');
+      previousMillis = currentMillis;
+    }
+
+    if (!state[3] && (currentMillis - previousMillis) >= 150) {
+      Serial.print('u');
+      previousMillis = currentMillis;
+    }
     
   }
 
@@ -152,13 +152,13 @@ void loop()  {
       break;
 
     case 'u': //if(blueval == 'u'){  //toggle ultrasonic measurements, with ramp up to minimize initial error by Dan
+      Serial.print('x');
+      delay(50);
       Serial.print('t'+ String(minThrottle+50));
       delay(30);
-      
       ultra ^= 1;
-      digitalWrite(enablePin, 1);
-      delay(15);
-      digitalWrite(enablePin, 0);
+      infrared ^= 1;
+      digitalWrite(enablePin, infrared);
       break;
 
     case 'f':
@@ -324,7 +324,7 @@ void loop()  {
       digitalWrite(enablePin, 0);
       break;
 
-   case 'x': //fake pitch
+   case 'x': //set defaults
       Serial.print('s');
       break;
 
